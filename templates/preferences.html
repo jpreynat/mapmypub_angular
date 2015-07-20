@@ -1,0 +1,36 @@
+<!--template name="preferences">
+<div id="pref-pane"-->
+  <i class="fa fa-times fa-2x pull-right" ng-click="closePrefPane()"></i>
+  <h4>Preferences</h4>
+  <div class="row">
+  <form>
+    <div class="col-xs-6">
+      <div class="form-group text-left">
+        <label for="brewery">Brewery</label>
+        <select id="brewery" class="form-control">
+          <option value="0">All</option>
+          <!--
+          {{#each breweries}}
+            {{> breweryOption}}
+          {{/each}}
+          -->
+        </select>
+      </div>
+    </div>
+    <div class="col-xs-6">
+      <div class="form-group text-left">
+        <label for="beer">Beer</label>
+        <select id="beer" class="form-control">
+          <option value="0">All</option>
+          <!--
+          {{#each beers}}
+            <option value={{id}}>{{name}}</option>
+          {{/each}}
+          -->
+        </select>
+      </div>
+    </div>
+  </form>
+  </div>
+<!--/div>
+</template-->

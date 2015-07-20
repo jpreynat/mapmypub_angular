@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html ng-app="mapMyPub">
+<head>
+  <title>mapMyPub | Home</title>
+  <link href="//fonts.googleapis.com/css?family=Playball" rel="stylesheet" />
+  <link href="//fonts.googleapis.com/css?family=Raleway:600,400,200,100" rel="stylesheet" />
+
+  <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" />
+  <link href="css/mapMyPub.css" rel="stylesheet" />
+	
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.2/angular-animate.min.js"></script>
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDgF9-hv09KVH_BYGZgv-Rund5lKZkLifM"></script>
+  <script src="js/mmp.js"></script>
+</head>
+
+<body ng-controller="AppCtrl">
+<div id="page-container" class="container-fluid height-100" ng-click="containerClicked($event)">
+<div class="row height-100">
+<div class="col-xs-12 text-center height-100">
+	<h1 id="site-title">mapMyPub</h1>
+
+	<nav id="site-nav" class="row">
+		<div class="col-xs-4">
+			<span class="fa-stack fa-2x" id="addBeer" ng-click="setPrefPane($event)">
+				<i class="fa fa-stop fa-stack-2x"></i>
+				<i class="fa fa-beer fa-stack-1x fa-inverse"></i>
+			</span>
+		</div>
+		<div class="col-xs-4">
+			<span class="fa-stack fa-2x" id="addPlace" ng-click="setPrefPane($event)">
+				<i class="fa fa-stop fa-stack-2x"></i>
+				<i class="fa fa-map-marker fa-stack-1x fa-inverse"></i>
+			</span>
+		</div>
+		<div class="col-xs-4">
+			<span class="fa-stack fa-2x" id="preferences" ng-click="setPrefPane($event)">
+				<i class="fa fa-stop fa-stack-2x"></i>
+				<i class="fa fa-cog fa-stack-1x fa-inverse"></i>
+			</span>
+		</div>
+	</nav>
+
+	<div id="pref-pane-container" class="row">
+	<div class="col-xs-10 col-xs-offset-1">
+		<div id="pref-pane" ng-if="prefPane.active" ng-include="prefPane.template" ng-cloak class="fade">
+		</div>
+	</div>
+	</div>
+
+	<div class="row height-100">
+		<div id="main-container" class="col-xs-12 text-center">
+			<div id="mmpMap"></div>
+    </div>
+	</div>
+</div>
+</div>
+</div>
+<div id="footer">
+	<img id="bg-bottom" src="img/beer-lineup.png" class="img-responsive" />
+</div>
+</body>
+</html>
+
+<!--
+<template name="breweryOption">
+	<option value={{id}} {{isSelectedBrewery}}>{{name}}</option>
+</template>
+-->
