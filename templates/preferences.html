@@ -7,13 +7,9 @@
     <div class="col-xs-6">
       <div class="form-group text-left">
         <label for="brewery">Brewery</label>
-        <select id="brewery" class="form-control">
+        <select id="brewery" ng-change="getBreweryBeers()" ng-model="brewery.id" class="form-control">
           <option value="0">All</option>
-          <!--
-          {{#each breweries}}
-            {{> breweryOption}}
-          {{/each}}
-          -->
+          <option ng-cloak ng-repeat="brewery in breweries" value={{brewery.id}}>{{brewery.name}}</option>
         </select>
       </div>
     </div>
@@ -22,11 +18,7 @@
         <label for="beer">Beer</label>
         <select id="beer" class="form-control">
           <option value="0">All</option>
-          <!--
-          {{#each beers}}
-            <option value={{id}}>{{name}}</option>
-          {{/each}}
-          -->
+          <option ng-repeat="beer in beers" value={{beer.id}}>{{beer.name}}</option>
         </select>
       </div>
     </div>
