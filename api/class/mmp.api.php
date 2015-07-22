@@ -19,8 +19,14 @@ class mmpAPI extends API {
      *          @return the corresponding beer object
      * 
      *      api/beers/brewery/brewery_id
+     *          alias of api/breweries/id/beers
      *          @params brewery_id: integer
      *          @return an array of all beers for this brewery
+     * 
+     *      api/beers/category/category_id
+     *          alias of api/categories/id/beers
+     *          @params category_id: integer
+     *          @return an array of all beers for this category
      * 
      *      api/beers/find/term
      *          @params term: string
@@ -33,7 +39,8 @@ class mmpAPI extends API {
         // Endpoint allowed verbs
         $allowedVerbs = array(
             'find' => true,
-            'brewery' => true
+            'brewery' => true,
+            'category' => true
         );
         
         $findById = false;
@@ -45,6 +52,8 @@ class mmpAPI extends API {
         $query =    "SELECT " .
                         "beers.id AS id, " .
                         "beers.name AS name, " . 
+                        "beers.abv AS abv, " .
+                        "beers.descript AS description, " .
                         "breweries.id AS brewery_id, " .
                         "breweries.name AS brewery_name, " .
                         "categories.id AS category_id, " .
@@ -65,6 +74,15 @@ class mmpAPI extends API {
             
             // Treat verb methods
             switch ($this->verb) {
+                // Find all beers corresponding to a category_id
+                case 'category':
+                    if (count($args) !== 1) {
+                        return $this->generate_error(2);
+                    }
+                    $category_id = $args[0];
+                    $query .= " WHERE categories.id = $category_id";
+                    break;
+                    
                 // Find all beers corresponding to a brewery_id
                 case 'brewery':
                     if (count($args) !== 1) {
@@ -104,6 +122,10 @@ class mmpAPI extends API {
         // Order by selection
         // Default to beer name
         $query .= " ORDER BY beers.name ";
+        
+        // Limit
+        // Default to 100
+        $query .= " LIMIT 100 ";
         
         $conn = __getDB();
         $fetch = $conn->query($query);
@@ -155,10 +177,10 @@ class mmpAPI extends API {
         
         $query =    "SELECT " .
                         "breweries.id AS id, " .
-                        "breweries.name AS name, " . 
-                        "breweries.country AS country, " .
+                        "breweries.name AS name " . /*, " . 
+                        /*"breweries.country AS country, " .
                         "breweries.website AS website, " .
-                        "breweries.descript AS description " .
+                        "breweries.descript AS description " .*/
                     "FROM breweries ";
         
         // Endpoint called with a verb
@@ -209,6 +231,114 @@ class mmpAPI extends API {
         // Order by selection
         // Default to brewery name
         $query .= " ORDER BY breweries.name ";
+        
+        $conn = __getDB();
+        $fetch = $conn->query($query);
+        
+        $results = Array();
+        
+        while($result = $fetch->fetch(PDO::FETCH_ASSOC)) {
+            $results[] = $result;
+        }
+        
+        $fetch->closeCursor();
+        return $findById ? $results[0] : $results;
+    }
+    
+    /**
+     * Endpoint: api/categories
+     * Methods
+     *      api/categories
+     *          @params none
+     *          @return an array of all categories
+     * 
+     *      api/categories/id
+     *          @params id: integer
+     *          @return the corresponding category object
+     * 
+     *      api/categories/id/beers
+     *          @params id: integer
+     *          @return an array of all beers for this category
+     * 
+     * Default sort order is category.name
+     * 
+     * */
+    protected function categories ($args) {
+        // Endpoint allowed verbs
+        $allowedVerbs = array(
+            'find' => true,
+            'brewery' => true
+        );
+        
+        $findById = false;
+        
+        if ($this->method != 'GET') {
+            return $this->generate_error(0);
+        }
+        
+        $query =    "SELECT " .
+                        "categories.id AS id, " .
+                        "categories.cat_name AS name " .
+                    "FROM categories ";
+        
+        // Endpoint called with a verb
+        if ($this->verb !== '') {
+            // Reject unhandled verb methods
+            if (!array_key_exists($this->verb, $allowedVerbs)) {
+                return $this->generate_error(1);
+            }
+            
+            // Treat verb methods
+            switch ($this->verb) {
+                // Find all beers corresponding to a brewery_id
+                case 'brewery':
+                    if (count($args) !== 1) {
+                        return $this->generate_error(2);
+                    }
+                    $brewery_id = $args[0];
+                    $query .= " WHERE breweries.id = $brewery_id";
+                    break;
+                
+                // Find a beer by LIKE on name
+                case 'find':
+                default:
+                    if (count($args) !== 1) {
+                        return $this->generate_error(2);
+                    }
+                    $research = $this->remove_accents($args[0]);
+                    $query .=   " WHERE LOWER(beers.name) LIKE LOWER('%$research%')" .
+                                " OR LOWER(breweries.name) LIKE LOWER('%$research%')";
+                    break;
+            }
+        }
+        
+        // No verb passed to endpoint
+        else {
+            // One numeric argument => lookup by ID
+            if (count($args) == 1 && is_numeric($args[0])) {
+                $id = $args[0];
+                $query .= " WHERE categories.id = $id";
+                $findById = true;
+            }
+            
+            // One numeric argument with verb beers => lookup by ID and retrieve beers
+            // Calls api/beers/brewery/id
+            if (count($args) == 2 && is_numeric($args[0]) && $args[1] == 'beers') {
+                $category_id = $args[0];
+                $this->endpoint = 'beers';
+                $this->verb = 'category';
+                return $this->beers([$category_id]);
+            }
+            
+            // API don't handle more than 2 arguments for this endpoint
+            if (count($args) > 2) {
+                return $this->generate_error(2);
+            }
+        }
+        
+        // Order by selection
+        // Default to beer name
+        $query .= " ORDER BY categories.cat_name ";
         
         $conn = __getDB();
         $fetch = $conn->query($query);

@@ -28,6 +28,11 @@ h1, h2, h3, h4, h5, h6 {
 
 .form-group {
 	margin-bottom: 2.5rem;
+	position: relative;
+}
+
+.form-group input {
+	position: relative;
 }
 
 .form-group label {
@@ -45,6 +50,40 @@ h1, h2, h3, h4, h5, h6 {
 	border: none;
 	border-radius: 0;
 	font-weight: 400;
+}
+
+.form-typeahead {
+    position: absolute;
+    z-index: 999;
+    
+    width: 100%;
+    padding: 0;
+    
+    list-style-type: none;
+    
+    color: rgb(34, 34, 34);
+}
+
+.form-typeahead li {
+	padding: 6px 12px;
+	
+	font-weight: 600;
+	
+	background-color: rgba(245, 183, 183, 0.96);
+	
+	cursor: pointer;
+}
+
+.form-typeahead li span.brewery {
+	margin-left: 5px;
+	
+	font-weight: 400;
+	
+	color: rgb(90, 90, 90);
+}
+
+#breweries-typeahead li.colored {
+	background-color: rgba(255, 205, 205, 0.96)
 }
 
 #page-container {
@@ -89,7 +128,7 @@ h1, h2, h3, h4, h5, h6 {
 	*/
 
 	border: none;
-	background-color: rgba(31, 31, 31, 0.72);
+	background-color: rgba(56, 56, 56, 0.9);
 	box-shadow: 0 0 6px rgba(109, 109, 109, 0.75);
 	color: #FEFEFE;
 }

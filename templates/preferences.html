@@ -8,17 +8,17 @@
       <div class="form-group text-left">
         <label for="brewery">Brewery</label>
         <select id="brewery" ng-change="getBreweryBeers()" ng-model="brewery.id" class="form-control">
-          <option value="0">All</option>
-          <option ng-cloak ng-repeat="brewery in breweries" value={{brewery.id}}>{{brewery.name}}</option>
+          <option value="0" selected>Any</option>
+          <option ng-cloak ng-repeat="brewery in breweries" value="{{brewery.id}}">{{brewery.name}}</option>
         </select>
       </div>
     </div>
     <div class="col-xs-6">
       <div class="form-group text-left">
         <label for="beer">Beer</label>
-        <select id="beer" class="form-control">
-          <option value="0">All</option>
-          <option ng-repeat="beer in beers" value={{beer.id}}>{{beer.name}}</option>
+        <select id="beer" ng-model="beer.id" class="form-control">
+          <option value="0" selected>Any</option>
+          <option ng-repeat="beer in beers" value="{{beer.id}}">{{beer.name}}</option>
         </select>
       </div>
     </div>

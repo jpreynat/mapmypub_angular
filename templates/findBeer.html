@@ -1,0 +1,57 @@
+<div ng-controller="FindBeerCtrl">
+  <i class="fa fa-times fa-2x" ng-click="closePrefPane()"></i>
+  <h4>Find your beer</h4>
+  <form>
+    <!--div class="form-group text-left">
+      <label for="breweryNameInput">Brewery</label>
+      <input ng-model="brewery.name" ng-change="getBreweries()" type="text" class="form-control" id="breweryNameInput" placeholder="Hoegaarden">
+      <ul id="breweries-typeahead">
+        <li ng-repeat="brewery in breweries" ng-click="setFormBrewery(brewery)" ng-class-even="'colored'">{{brewery.name}}</li>
+      </ul>
+    </div-->
+    <div class="form-group text-left">
+      <label for="beerNameInput">Beer Name</label>
+      <input ng-model="beerInput.name" ng-change="getBeers()" type="text" class="form-control" id="beerNameInput" placeholder="Hoegaarden">
+      <ul id="beers-typeahead" class="form-typeahead">
+        <li ng-repeat="beer in beers" ng-click="setFormBeer(beer)" ng-class-even="'colored'">{{beer.name}} <span class="brewery">{{beer.brewery_name}}</span></li>
+      </ul>
+    </div>
+    <!--div class="form-group text-left">
+      <label for="beerTypeInput">Type</label>
+      <select id="beerTypeInput" class="form-control">
+        <option ng-repeat="category in categories" value="{{category.id}}">{{category.name}}</option>
+      </select>
+    </div>
+    <div class="form-group text-left">
+      <label for="beerDescriptionInput">Description</label>
+      <textarea ng-model="beer.description" class="form-control" id="beerDescriptionInput" rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-default">Submit</button-->
+  </form>
+  <div id="beer-details" ng-if="!!beer.id">
+    <dl class="dl-horizontal">
+      <dt>Name</dt>
+      <dd class="text-left">{{beer.name}}</dd>
+    </dl>
+    <dl class="dl-horizontal">
+      <dt>Brewery</dt>
+      <dd class="text-left">{{beer.brewery_name}}</dd>
+    </dl>
+    <dl class="dl-horizontal" ng-if="!!beer.category_name">
+      <dt>Category</dt>
+      <dd class="text-left">{{beer.category_name}}</dd>
+    </dl>
+    <dl class="dl-horizontal" ng-if="!!beer.style_name">
+      <dt>Style</dt>
+      <dd class="text-left">{{beer.style_name}}</dd>
+    </dl>
+    <dl class="dl-horizontal" ng-if="!!parseInt(beer.abv, 10)">
+      <dt>Alcohol by Volume</dt>
+      <dd class="text-left">{{beer.abv}}%</dd>
+    </dl>
+    <dl class="dl-horizontal" ng-if="!!beer.description">
+      <dt>Description</dt>
+      <dd class="text-left">{{beer.description}}</dd>
+    </dl>
+  </div>
+</div>

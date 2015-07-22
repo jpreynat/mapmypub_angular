@@ -91,7 +91,7 @@ abstract class API {
             return $this->_response($this->{$this->endpoint}($this->args));
         }
         else {
-            return $this->_response("No Endpoint: $this->endpoint for method $this->method\n" . print_r(get_class_methods ("mmpAPI")), 404);
+            return $this->_response("No Endpoint at this address", 404);
         }
     }
     
