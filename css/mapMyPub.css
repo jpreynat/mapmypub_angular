@@ -48,6 +48,20 @@ h1, h2, h3, h4, h5, h6 {
 	font-size: 1.4rem;
 }
 
+.infowindow-status {
+	font-weight: 600;
+	font-size: 1.4rem;
+    text-align: center;
+}
+
+.pub-open {
+	color: rgb(100, 160, 14);
+}
+
+.pub-closed {
+	color: rgb(165, 59, 59);
+}
+
 .infowindow-openhours {
 	font-weight: 300;
 	font-size: 1.5rem;
@@ -119,6 +133,27 @@ h1, h2, h3, h4, h5, h6 {
     color: #F6A6A6;
 }
 
+#findBeerForm {
+	position: relative;
+}
+
+#beerNameInput {
+	border: none;
+	border-bottom: 1px solid rgba(230, 99, 99, 0.35);
+	font-size: 1.8rem;
+}
+
+#beerNameInput:focus {
+	border: none;
+	border-bottom: 1px solid rgba(230, 99, 99, 1);
+	box-shadow: none;
+	outline: none;
+}
+
+#beerNameInput:focus {
+	outline: none;
+}
+
 #breweries-typeahead li.colored {
 	background-color: rgba(255, 205, 205, 0.96)
 }
@@ -158,17 +193,17 @@ h1, h2, h3, h4, h5, h6 {
 #pref-pane-container {
 	position: absolute;
 	z-index: 9999;
-	top: 15%;
+	top: 8rem;
 	
 	width: 100%;
 }
 
 #pref-pane {
 	position: relative;
-	max-width: 800px;
+	max-width: 100rem;
 
 	margin: 0 auto;
-	padding: 2rem 3rem;
+	padding: 3rem 3rem;
 
 	/*
 	border: 1px solid rgba(217, 217, 217, 0.68);
@@ -232,7 +267,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #main-container {
-	max-height: 65%;
+	max-height: 70%;
 	height: 75%;
 	max-width: 100%;
 	/* TESTS /*

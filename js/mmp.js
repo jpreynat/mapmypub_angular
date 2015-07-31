@@ -6,12 +6,16 @@ mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'BeerPubs', 'Breweries
   $scope.selectedBeerPubs = [];
   
   $scope.$watch('selectedBeer.get()', function (newVal, oldVal) {
+    if (newVal === oldVal)
+      return;
+    
     var beer_id = newVal.id;
       
-      if (!!beer_id && typeof beer_id !== 'undefined') {
-        BeerPubs.query({ id: beer_id }, function (data) {
-          $scope.selectedBeerPubs = data;
-          refreshMap();
+    if (!!beer_id && typeof beer_id !== 'undefined') {
+      BeerPubs.query({ id: beer_id }, function (data) {
+        $scope.selectedBeerPubs = data;
+        clearMarkers();
+        refreshMap();
       });
     }
   });
@@ -143,9 +147,23 @@ mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'BeerPubs', 'Breweries
     });
   }
   
+  function clearMarkers () {
+    mmpMarkers.forEach(function (marker) {
+      marker.setMap(null);
+    });
+    
+    mmpInfowindowsHandlers.forEach(function (handler) {
+      google.maps.event.removeListener(handler);
+    });
+    
+    mmpInfowindowsHandlers = [];
+    mmpMarkers = [];
+  }
+  
   function infoWindowTemplate (pub) {
     var contentString = '<h5 class="infowindow-title text-left">' + pub.name + '</h5>' +
                         '<p class="infowindow-content text-left">' + pub.address + '</p>' +
+                        '<p class="infowindow-status ' + (isOpen(pub) ? 'pub-open' : 'pub-closed') + '">' + (isOpen(pub) ? 'Open!' : 'Closed') + '</p>' +
                         '<dl class="dl-horizontal text-left">' +
                         infoWindowOpenHours('Mon', pub.m_o, pub.m_c) +
                         infoWindowOpenHours('Tue', pub.tu_o, pub.tu_c) +
@@ -157,11 +175,74 @@ mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'BeerPubs', 'Breweries
                         '<dl/>';
     return contentString;
   }
+  
+  function infoWindowOpenHours (day, open, close) {
+    return '<dt>' + day + '</dt><dd>' + open + ' - ' + close + '</dd>';
+  }
+  
+  function isOpen (pub) {
+    var days = ['su', 'm', 'tu', 'w', 'th', 'f', 'sa'],
+        currentMoment = moment(),
+        today = currentMoment.day(),
+        mysql_day = days[today],
+        openMoment = moment(pub[mysql_day + '_o'], 'HH:mm'),
+        closeMoment = moment(pub[mysql_day + '_c'], 'HH:mm');
+    
+    return currentMoment.isBetween(openMoment, closeMoment);
+  }
+  
 }]);
 
-function infoWindowOpenHours (day, open, close) {
-  return '<dt>' + day + '</dt><dd>' + open + ' - ' + close + '</dd>';
-}
+
+mmp.controller('FindBeerCtrl', ['$scope', 'Beers', 'selectedBeer', function ($scope, Beers, selectedBeer) {
+
+  $scope.beerInput = selectedBeer.get();
+  
+  $scope.beer = selectedBeer.get();
+  
+  $scope.beers = [];
+  
+  $scope.displayInfoPanel = false;
+  
+  $scope.showInfoPanel = function () {
+    if (!!$scope.beer.id) {
+      $scope.displayInfoPanel = true;
+    }
+  };
+  
+  $scope.hideInfoPanel = function () {
+    $scope.displayInfoPanel = false;
+  };
+  
+  $scope.setFormBeer = function (beer) {
+    Beers.get({ id: beer.id }, function (data) {
+      $scope.beerInput = data;
+      $scope.beer = angular.copy(data);
+      selectedBeer.set(angular.copy(data));
+    });
+    
+    $scope.beers = [];
+  };
+  
+  $scope.getBeers = function () {
+    var term = $scope.beerInput.name.trim();
+    
+    $scope.hideInfoPanel();
+    $scope.beers = [];
+    
+    if (!!term) {
+      Beers.retrieve({}, { 
+          filters: ['brewery'], 
+          limit: 10, 
+          research: term 
+          
+        }, function (data) {
+          $scope.beers = data;
+      });
+    }
+  };
+}]);
+
 
 mmp.controller('AddBeerCtrl', ['$scope', '$timeout', 'Beers', 'Breweries', 'Categories', function ($scope, $timeout, Beers, Breweries, Categories) {
   
@@ -198,40 +279,6 @@ mmp.controller('AddBeerCtrl', ['$scope', '$timeout', 'Beers', 'Breweries', 'Cate
   });
 }]);
 
-mmp.controller('FindBeerCtrl', ['$scope', 'Beers', 'selectedBeer', function ($scope, Beers, selectedBeer) {
-
-  $scope.beerInput = selectedBeer.get();
-  
-  $scope.beer = selectedBeer.get();
-  
-  $scope.beers = [];
-  
-  $scope.setFormBeer = function (beer) {
-    Beers.get({ id: beer.id }, function (data) {
-      $scope.beerInput = data;
-      $scope.beer = angular.copy(data);
-      selectedBeer.set(angular.copy(data));
-    });
-    $scope.beers = [];
-  };
-  
-  $scope.getBeers = function () {
-    var term = $scope.beerInput.name.trim();
-    
-    $scope.beers = [];
-    
-    if (!!term) {
-      Beers.retrieve({}, { 
-          filters: ['brewery'], 
-          limit: 10, 
-          research: term 
-          
-        }, function (data) {
-          $scope.beers = data;
-      });
-    }
-  };
-}]);
 
 mmp.controller('AddPlaceCtrl', ['$scope', function ($scope) {
   $scope.pub = {
