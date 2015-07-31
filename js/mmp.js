@@ -1,48 +1,19 @@
 var mmp = angular.module('mapMyPub', ['ngAnimate', 'ngResource']);
 
-mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'Breweries', 'Categories', 'selectedBeer', function ($scope, $timeout, Beers, Breweries, Categories, selectedBeer) {
-  /**
-   * Beers properties
-   * *
-  Beers.query(function (data) {
-    $scope.beers = data;
-  });
-  
-  $scope.beer = {
-    id: '0'
-  };
-  $scope.beers = [];
-  $scope.breweries = [];
-  
-  Breweries.query({ verb: null }, function (data) {
-    $scope.breweries = data;
-    $scope.brewery = $scope.breweries[0];
-  });
-  
-  $scope.getBreweryBeers = function () {
-    if ($scope.brewery.id === '0') {
-      $scope.brewery = {
-        id: '0'
-      };
-      Beers.query(function (data) {
-        $scope.beers = data;
-      });
-    }
-    else {
-      Breweries.get({ id: $scope.brewery.id, verb: null }, function (data) {
-        $scope.brewery = data;
-      });
-      Breweries.query({ id: $scope.brewery.id, verb: 'beers' }, function (data) {
-        $scope.beers = data;
-        $scope.beer = data[0] || { id: '0' };
-      });
-    }
-  };
-  */
+mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'BeerPubs', 'Breweries', 'Categories', 'selectedBeer', function ($scope, $timeout, Beers, BeerPubs, Breweries, Categories, selectedBeer) {
   
   $scope.selectedBeer = selectedBeer;
+  $scope.selectedBeerPubs = [];
+  
   $scope.$watch('selectedBeer.get()', function (newVal, oldVal) {
-    console.log($scope.selectedBeer.get());
+    var beer_id = newVal.id;
+      
+      if (!!beer_id && typeof beer_id !== 'undefined') {
+        BeerPubs.query({ id: beer_id }, function (data) {
+          $scope.selectedBeerPubs = data;
+          refreshMap();
+      });
+    }
   });
   
   
@@ -85,13 +56,112 @@ mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'Breweries', 'Categori
    * Google Maps API properties
    * */
   var mapOptions = {
-    center: new google.maps.LatLng(45.7674631, 4.8335123),
-    zoom: 17,
-    mapTypeId: google.maps.MapTypeId.ROADMAP
-  };
+        center: new google.maps.LatLng(45.7674631, 4.8335123),
+        zoom: 17,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+      },
+      openedInfowindow = null,
+      mmpMarkers = [],
+      mmpInfowindowsHandlers = [];
 
   $scope.map = new google.maps.Map(document.getElementById('mmpMap'), mapOptions);
+  
+  // set pubs on map when loaded
+  google.maps.event.addListenerOnce($scope.map, 'tilesloaded', refreshMap);
+
+  // add listener to refresh pubs when map is dragged or zoom changed
+  google.maps.event.addListener($scope.map, 'zoom_changed', refreshMap);
+  google.maps.event.addListener($scope.map, 'dragend', refreshMap);
+  
+  // redraw pubs based on current map bounds
+  function refreshMap () {
+    // retrieve mmpMap and its bounds
+    var mapBounds = $scope.map.getBounds();
+  
+    // clear old markers and infowindows
+    /*
+    if (!!mmpMarkers.length) {
+      removeMarkers();
+    }
+    */
+  
+    // Put each pub in bounds on the map
+    $scope.selectedBeerPubs.forEach(function (pub) {
+  
+      // retrieve LatLng of the current pub
+      var latlng = new google.maps.LatLng(pub.lat, pub.lng),
+          alreadySet = mmpMarkers.some(function (marker) {
+            return marker.title === pub.name;
+          });
+      
+      // place on the map if in bounds and not already set
+      if (mapBounds.contains(latlng) && !alreadySet) {
+        var marker = new google.maps.Marker({
+          map: $scope.map,
+          position: latlng,
+          title: pub.name
+        });
+  
+        var contentString = infoWindowTemplate(pub),
+            infoWindow = new google.maps.InfoWindow({ content: contentString }),
+            handler = google.maps.event.addListener(marker, 'click', function () {
+              infoWindow.open($scope.map, marker);
+            });
+  
+        mmpMarkers.push(marker);
+        mmpInfowindowsHandlers.push(handler);
+        styleInfoWindow(infoWindow);
+      }
+    });
+  }
+  
+  function styleInfoWindow (infowindow) {
+    google.maps.event.addListener(infowindow, 'domready', function() {
+       var iwOuter = $('.gm-style-iw'),
+           iwBackground = iwOuter.prev(),
+           iwCloser = iwOuter.next();
+           
+       iwBackground.css({'display' : 'none'});
+       iwCloser.addClass('iw-closer');
+    });
+  }
+  
+  function removeMarkers () {
+    // retrieve mmpMap and its bounds
+    var mapBounds = $scope.map.getBounds();
+    
+    mmpMarkers.forEach(function (marker) {
+      if (!mapBounds.contains(marker.position)) {
+        var index = mmpMarkers.indexOf(marker),
+            handler = mmpInfowindowsHandlers[index];
+        
+        marker.setMap(null);
+        mmpMarkers.splice(index, 1);
+        google.maps.event.removeListener(handler);
+        mmpInfowindowsHandlers.splice(index, 1);
+      }
+    });
+  }
+  
+  function infoWindowTemplate (pub) {
+    var contentString = '<h5 class="infowindow-title text-left">' + pub.name + '</h5>' +
+                        '<p class="infowindow-content text-left">' + pub.address + '</p>' +
+                        '<dl class="dl-horizontal text-left">' +
+                        infoWindowOpenHours('Mon', pub.m_o, pub.m_c) +
+                        infoWindowOpenHours('Tue', pub.tu_o, pub.tu_c) +
+                        infoWindowOpenHours('Wed', pub.w_o, pub.w_c) +
+                        infoWindowOpenHours('Thu', pub.th_o, pub.th_c) +
+                        infoWindowOpenHours('Fri', pub.f_o, pub.f_c) +
+                        infoWindowOpenHours('Sat', pub.sa_o, pub.sa_c) +
+                        infoWindowOpenHours('Sun', pub.su_o, pub.su_c) +
+                        '<dl/>';
+    return contentString;
+  }
 }]);
+
+function infoWindowOpenHours (day, open, close) {
+  return '<dt>' + day + '</dt><dd>' + open + ' - ' + close + '</dd>';
+}
 
 mmp.controller('AddBeerCtrl', ['$scope', '$timeout', 'Beers', 'Breweries', 'Categories', function ($scope, $timeout, Beers, Breweries, Categories) {
   
@@ -137,9 +207,11 @@ mmp.controller('FindBeerCtrl', ['$scope', 'Beers', 'selectedBeer', function ($sc
   $scope.beers = [];
   
   $scope.setFormBeer = function (beer) {
-    $scope.beerInput = beer;
-    $scope.beer = angular.copy(beer);
-    selectedBeer.set(angular.copy(beer));
+    Beers.get({ id: beer.id }, function (data) {
+      $scope.beerInput = data;
+      $scope.beer = angular.copy(data);
+      selectedBeer.set(angular.copy(data));
+    });
     $scope.beers = [];
   };
   
@@ -149,15 +221,56 @@ mmp.controller('FindBeerCtrl', ['$scope', 'Beers', 'selectedBeer', function ($sc
     $scope.beers = [];
     
     if (!!term) {
-      Beers.query({ verb: 'find', term: term }, function (data) {
-        $scope.beers = data;
+      Beers.retrieve({}, { 
+          filters: ['brewery'], 
+          limit: 10, 
+          research: term 
+          
+        }, function (data) {
+          $scope.beers = data;
       });
     }
   };
 }]);
 
+mmp.controller('AddPlaceCtrl', ['$scope', function ($scope) {
+  $scope.pub = {
+    name: '',
+    address: ''
+  };
+  
+  $scope.geoCodePub = function () {
+    var 
+        geocoder =  new google.maps.Geocoder(),
+        address =   { 'address': $scope.pub.address };
+    
+    if (!$scope.addPlace.$valid) {
+      return;
+    }
+    
+    geocoder.geocode(address, function (results, status) {
+      // check if result contains an error
+      if (status !== google.maps.GeocoderStatus.OK || results.length !== 1) {
+        $('#pref-pane-alert').removeClass('hidden');
+      }
+
+      else {
+        // result ok
+        console.log(results);
+        $('#pref-pane-alert').addClass('hidden');
+        $('button.btn').text('Submit!').removeClass('btn-search').addClass('btn-confirm');
+      }
+    });
+  };
+}]);
+
 mmp.factory('Beers', function ($resource) {
-  return $resource("/api/beers/:id/:verb/:term");
+  return $resource("/api/beers/:id/:verb/:term", {}, {
+    retrieve: {
+      method: 'POST',
+      isArray: true
+    }
+  });
 });
 
 mmp.factory('Breweries', function ($resource) {
@@ -166,6 +279,10 @@ mmp.factory('Breweries', function ($resource) {
 
 mmp.factory('Categories', function ($resource) {
   return $resource("/api/categories/:id/:verb");
+});
+
+mmp.factory('BeerPubs', function ($resource) {
+  return $resource("/api/pubs/beer/:id");
 });
 
 mmp.service('selectedBeer', function () {

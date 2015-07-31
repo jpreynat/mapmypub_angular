@@ -27,7 +27,7 @@ CREATE TABLE `breweries_geocode` (
   `longitude` float NOT NULL default '0',
   `accuracy` varchar(255) NOT NULL default '',
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=1316 DEFAULT CHARSET=latin1;
+) ENGINE=INNODB;
 
 --
 -- Dumping data for table `breweries_geocode`

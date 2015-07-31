@@ -35,7 +35,7 @@ CREATE TABLE `beers` (
   `add_user` int(11) NOT NULL default '0',
   `last_mod` datetime NOT NULL default '0000-00-00 00:00:00',
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=5915 DEFAULT CHARSET=latin1;
+) ENGINE=INNODB;
 
 --
 -- Dumping data for table `beers`

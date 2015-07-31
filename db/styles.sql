@@ -26,7 +26,7 @@ CREATE TABLE `styles` (
   `style_name` varchar(255) character set utf8 collate utf8_unicode_ci NOT NULL default '',
   `last_mod` datetime NOT NULL default '0000-00-00 00:00:00',
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=142 DEFAULT CHARSET=latin1;
+) ENGINE=INNODB;
 
 --
 -- Dumping data for table `styles`

@@ -25,7 +25,7 @@ CREATE TABLE `categories` (
   `cat_name` varchar(255) NOT NULL default '',
   `last_mod` datetime NOT NULL default '0000-00-00 00:00:00',
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=13 DEFAULT CHARSET=latin1;
+) ENGINE=INNODB;
 
 --
 -- Dumping data for table `categories`
