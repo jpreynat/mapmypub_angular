@@ -77,6 +77,11 @@ h1, h2, h3, h4, h5, h6 {
 	position: relative;
 }
 
+.form-group input:focus {
+	outline: none;
+	box-shadow: none;
+}
+
 .form-group label {
 	font-weight: 500;
 	text-transform: uppercase;
@@ -124,6 +129,10 @@ h1, h2, h3, h4, h5, h6 {
 	color: rgb(90, 90, 90);
 }
 
+.form-typeahead li.dropdown-selected {
+	background-color: rgb(232, 151, 151);
+}
+
 .form-alert {
     margin: 10px 0 0 10px;
     
@@ -154,10 +163,6 @@ h1, h2, h3, h4, h5, h6 {
 	outline: none;
 }
 
-#breweries-typeahead li.colored {
-	background-color: rgba(255, 205, 205, 0.96)
-}
-
 #beer-details dt {
 	color: rgb(253, 170, 170);
 }
@@ -176,9 +181,17 @@ h1, h2, h3, h4, h5, h6 {
 	min-height: 10%;
 	margin: 0 auto 2rem;
 	font-size: 9rem;
+}
+
+.site-title h1,
+.site-title h3 {
 	font-weight: 600;
 	font-family: Playball, cursive;
 	color: rgba(165, 59, 59, 1);
+}
+
+.site-title h3 {
+	font-family: 'Mrs Sheppards', cursive;
 }
 
 #site-nav {
@@ -262,16 +275,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #bg-bottom {
-	height: 15rem;
-	margin: 2rem auto 0;
+	height: 10rem;
+	margin: 0 auto;
 }
 
 #main-container {
 	max-height: 70%;
 	height: 75%;
 	max-width: 100%;
-	/* TESTS /*
-	background-color: #999;*/
 }
 
 #mmpMap {
@@ -288,4 +299,178 @@ h1, h2, h3, h4, h5, h6 {
 .height-100 {
 	height: 100%;
 	min-height: 100%;
+}
+
+
+/**
+ * Admin page
+ */
+body.admin-body {
+	background: url('../img/gplaypattern.png');
+}
+
+body.admin-body #page-container {
+	overflow-y: auto;
+}
+/*
+.admin-body .form-typeahead li.dropdown-selected {
+	background-color: rgb(232, 151, 151);
+}
+*/
+.site-title h3 {
+	margin-bottom: 3rem;
+}
+
+.admin-form.closed {
+	max-height: 8rem;
+	margin-bottom: 2rem;
+    overflow-y: hidden;
+    
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #656565;
+}
+
+.admin-form {
+	margin-bottom: 5rem;
+	max-height: 600rem;
+	padding: 2rem;
+    background-color: rgba(0, 0, 0, 0.35);
+    color: #F1F1F1;
+    
+    transition: all 1s cubic-bezier(0.46, 0.03, 0.52, 0.96);
+}
+
+.admin-form-content {
+	opacity: 1;
+	transition: opacity 1s ease-in-out;
+}
+
+.admin-form-content.invisible {
+	visibility: initial;
+	opacity: 0;
+	transition: opacity 1s ease-in-out;
+}
+
+.admin-form-toggler {
+    position: absolute;
+    top: 0;
+    left: 0;
+	width: 100%;
+    height: 8rem;
+    cursor: pointer;
+}
+
+.admin-form h1 {
+	margin: 0 auto 2rem 5rem;
+	font-family: 'Mrs Sheppards', cursive;
+}
+
+.admin-form h2 {
+	margin-bottom: 0;
+	font-family: 'Mrs Sheppards', cursive;
+	font-size: 4rem;
+	color: #FFB3B3;
+}
+
+.admin-form h3 {
+	font-family: 'Playball', cursive;
+	color: #FFB3B3;
+}
+
+section.menu h3 {
+	font-family: 'Raleway', sans-serif;
+	color: rgb(241, 241, 241);
+	cursor: pointer;
+}
+
+section.menu h4 {
+	font-family: Pacifico;
+	color: #FFB3B3;
+}
+
+div.beers .list {
+	margin-top: 4rem;
+}
+
+.simple-list li span.brewery {
+	margin-left: 1rem;
+	
+	font-family: 'Pacifico', cursive;
+	/*font-size: 2rem;*/
+	font-weight: 400;
+	
+	color: rgb(216, 216, 216);
+}
+
+span.deleter {
+	margin-right: 3%;
+	
+	font-size: 1.3rem;
+	font-weight: 600;
+	
+	cursor: pointer;
+}
+
+.add-beer-card,
+.beer-card {
+	position: relative;
+	float: left;
+	width: 30%;
+	margin: auto 1.66% 2rem;
+	padding: 2rem 1rem;
+	border-radius: 3px;
+	background-color: rgb(95, 95, 95);
+}
+.add-beer-card {
+	cursor: pointer;
+}
+
+.add-beer-card.selected {
+	background-color: rgb(48, 48, 48);
+}
+
+.add-beer-card > h4 {
+	font-family: 'Pacifico', cursive;
+	color: #FFB3B3;
+}
+
+.beer-card > p.abv,
+.add-beer-card > p.abv {
+	font-size: 1.6rem;
+}
+
+.beer-card p.description,
+.add-beer-card p.description {
+	padding: 0 1rem;
+	margin-bottom: 1.5rem;
+	font-size: 1.3rem;
+	font-style: italic;
+}
+
+/**
+ * Font awesome size tweak
+ * ***************************/
+.fa-1x5 {
+    font-size: 1.5em;
+}
+
+.beer-card i.deleter {
+	position: absolute;
+	opacity: 0;
+	top: 0.7rem;
+    right: 0.6rem;
+	
+	cursor: pointer;
+	
+	transition: opacity 0.2s linear;
+}
+
+.beer-card:hover i.deleter {
+	opacity: 1;
+	transition: opacity 0.2s linear;
+}
+
+i.deleter:hover {
+	opacity: 1;
+	transition: opacity 0.2s linear;
 }

@@ -346,6 +346,10 @@ class mmpAPI extends API {
         // Default to brewery name
         $query .= " ORDER BY breweries.name ";
         
+        // Set limit to 10 by default
+        $limit = (isset($limit) ? $limit : 10);
+        $query .= " LIMIT $limit";
+        
         $conn = __getDB();
         $fetch = $conn->query($query);
         
@@ -489,34 +493,200 @@ class mmpAPI extends API {
     protected function pubs ($args) {
         // Endpoint allowed verbs
         $allowedVerbs = array(
-            'beer' => true
+            'beer' => true,
+            'find' => true
         );
         
-        if ($this->method != 'GET') {
+        /* Handle deleting a pub's beer */
+        if ($this->method == 'DELETE') {
+            
+            // Endpoint allowed verbs
+            $allowedVerbs = array(
+            );
+            
+            // Get the DB connection
+            $conn = __getDB();
+            
+            // Endpoint called with a verb
+            if ($this->verb !== '') {
+                // Reject unhandled verb methods
+                if (!array_key_exists($this->verb, $allowedVerbs)) {
+                    return $this->generate_error(1);
+                }
+            
+                // Treat verb methods
+                switch ($this->verb) {
+                    default:
+                        return $this->generate_error(2);
+                        break;
+                }
+            }
+            
+            // No verb
+            else {
+                // Request to pubs/:pub_id/beer/:beer_id
+                if (count($args) == 3 && is_numeric($args[0]) && $args[1] == 'beer' && is_numeric($args[2])) {
+                    $pub_id = $args[0];
+                    $beer_id = $args[2];
+                    
+                    $query =    "DELETE from beers_pubs" .
+                                " WHERE beer_id = $beer_id" .
+                                " AND pub_id = $pub_id";
+                }
+                
+                else {
+                    return $this->generate_error(2);
+                }
+            }
+            
+            $removed = $conn->exec($query);
+            
+            return array('removed' => $removed);
+        }
+        
+        /* Handle posting a new pub or adding beers to a pub*/
+        if ($this->method == 'POST') {
+            // Transcodifaction from application/json payload
+            if (empty($_POST)) {
+                $_POST = json_decode(file_get_contents('php://input'), true);
+            }
+            
+            // Endpoint allowed verbs
+            $allowedVerbs = array(
+                'beers' => true
+            );
+            
+            // Get the DB connection
+            $conn = __getDB();
+            
+            // Endpoint called with a verb
+            if ($this->verb !== '') {
+                // Reject unhandled verb methods
+                if (!array_key_exists($this->verb, $allowedVerbs)) {
+                    return $this->generate_error(1);
+                }
+            
+                // Treat verb methods
+                switch ($this->verb) {
+                    // Add beers to a pub
+                    case 'beers':
+                    default:
+                        if (count($args) !== 0) {
+                            return $this->generate_error(2);
+                        }
+                        
+                        // Checking POST params
+                        if (count($_POST) != 2 && (!in_array('beer', $_POST) || !in_array('pub', $_POST))) {
+                            return $this->generate_error(3);
+                        }
+                        
+                        $beer_id = $conn->quote($_POST['beer']);
+                        $pub_id = $conn->quote($_POST['pub']);
+                        
+                        $query =    "INSERT INTO beers_pubs (" .
+                                    "beer_id, pub_id, last_mod" .
+                                    ") VALUES (" .
+                                    "$beer_id,$pub_id,NOW()" .
+                                    ");";
+                        
+                        break;
+                }
+            }
+            
+            else {
+                /**
+                 * TODO: Additionnal controls on payload values
+                 * */
+                if (!array_key_exists('name', $_POST) && !array_key_exists('address', $_POST)) {
+                    return $this->generate_error(3);
+                }
+                
+                $pub = $_POST;
+                
+                // Escaping strings
+                foreach ($pub as &$value) {
+                    if (is_string($value))
+                        $value = $conn->quote($value);
+                }
+                
+                $query =                                            "INSERT INTO pubs (" .
+                                                                    "last_mod " .
+                                                                    ", name" .
+                                                                    ", address" .
+                                                                    ", lat" .
+                                                                    ", lng" .
+                             (in_array('description', $pub) ?       ", descript"        : "") .
+                             (in_array('add_user', $pub) ?          ", add_user"        : "") .
+                             (in_array('m_o', $pub) ?               ", monday_open"     : "") .
+                             (in_array('m_c', $pub) ?               ", monday_close"    : "") .
+                             (in_array('tu_o', $pub) ?              ", tuesday_open"    : "") .
+                             (in_array('tu_c', $pub) ?              ", tuesday_close"   : "") .
+                             (in_array('w_o', $pub) ?               ", wednesday_open"  : "") .
+                             (in_array('w_c', $pub) ?               ", wednesday_close" : "") .
+                             (in_array('th_o', $pub) ?              ", thursday_open"   : "") .
+                             (in_array('th_c', $pub) ?              ", thursday_close"  : "") .
+                             (in_array('f_o', $pub) ?               ", friday_open"     : "") .
+                             (in_array('f_c', $pub) ?               ", friday_close"    : "") .
+                             (in_array('sa_o', $pub) ?              ", saturday_open"   : "") .
+                             (in_array('sa_c', $pub) ?              ", saturday_close"  : "") .
+                             (in_array('su_o', $pub) ?              ", sunday_open"     : "") .
+                             (in_array('su_c', $pub) ?              ", sunday_close"    : "") .
+                                                                    ") VALUES (" .
+                                                                    "NOW()" .
+                                                                    ", " . $pub['name'] .
+                                                                    ", " . $pub['address'] .
+                                                                    ", " . $pub['lat'] .
+                                                                    ", " . $pub['lng'] .
+                             (in_array('description', $pub) ?       ", " . $pub['description']     : "") .
+                             (in_array('add_user', $pub) ?          ", " . $pub['add_user']        : "") .
+                             (in_array('m_o', $pub) ?               ", " . $pub['monday_open']     : "") .
+                             (in_array('m_c', $pub) ?               ", " . $pub['monday_close']    : "") .
+                             (in_array('tu_o', $pub) ?              ", " . $pub['tuesday_open']    : "") .
+                             (in_array('tu_c', $pub) ?              ", " . $pub['tuesday_close']   : "") .
+                             (in_array('w_o', $pub) ?               ", " . $pub['wednesday_open']  : "") .
+                             (in_array('w_c', $pub) ?               ", " . $pub['wednesday_close'] : "") .
+                             (in_array('th_o', $pub) ?              ", " . $pub['thursday_open']   : "") .
+                             (in_array('th_c', $pub) ?              ", " . $pub['thursday_close']  : "") .
+                             (in_array('f_o', $pub) ?               ", " . $pub['friday_open']     : "") .
+                             (in_array('f_c', $pub) ?               ", " . $pub['friday_close']    : "") .
+                             (in_array('sa_o', $pub) ?              ", " . $pub['saturday_open']   : "") .
+                             (in_array('sa_c', $pub) ?              ", " . $pub['saturday_close']  : "") .
+                             (in_array('su_o', $pub) ?              ", " . $pub['sunday_open']     : "") .
+                             (in_array('su_c', $pub) ?              ", " . $pub['sunday_close']    : "") .
+                                                                    ");";
+            }
+            
+            $conn->exec($query);
+            
+            return array('id' => $conn->lastInsertId());
+        }
+        
+        /* Handle GET methods */
+        else if ($this->method != 'GET') {
             return $this->generate_error(0);
         }
         
         $query =    "SELECT " .
-                        "pubs.id AS id, " .
-                        "pubs.name AS name, " .
-                        "pubs.lat AS lat, " .
-                        "pubs.lng AS lng, " .
-                        "pubs.address AS address, " .
-                        "pubs.descript AS description, " .
-                        "TIME_FORMAT(pubs.monday_open, '%H:%i') AS m_o, " .
-                        "TIME_FORMAT(pubs.monday_close, '%H:%i') AS m_c, " .
-                        "TIME_FORMAT(pubs.tuesday_open, '%H:%i') AS tu_o, " .
-                        "TIME_FORMAT(pubs.tuesday_close, '%H:%i') AS tu_c, " .
-                        "TIME_FORMAT(pubs.wednesday_open, '%H:%i') AS w_o, " .
-                        "TIME_FORMAT(pubs.wednesday_close, '%H:%i') AS w_c, " .
-                        "TIME_FORMAT(pubs.thursday_open, '%H:%i') AS th_o, " .
-                        "TIME_FORMAT(pubs.thursday_close, '%H:%i') AS th_c, " .
-                        "TIME_FORMAT(pubs.friday_open, '%H:%i') AS f_o, " .
-                        "TIME_FORMAT(pubs.friday_close, '%H:%i') AS f_c, " .
-                        "TIME_FORMAT(pubs.saturday_open, '%H:%i') AS sa_o, " .
-                        "TIME_FORMAT(pubs.saturday_close, '%H:%i') AS sa_c, " .
-                        "TIME_FORMAT(pubs.sunday_open, '%H:%i') AS su_o, " .
-                        "TIME_FORMAT(pubs.sunday_close, '%H:%i') AS su_c " .
+                        "  pubs.id AS id" .
+                        ", pubs.name AS name" .
+                        ", pubs.lat AS lat" .
+                        ", pubs.lng AS lng" .
+                        ", pubs.address AS address" .
+                        ", pubs.descript AS description" .
+                        ", TIME_FORMAT(pubs.monday_open, '%H:%i') AS m_o" .
+                        ", TIME_FORMAT(pubs.monday_close, '%H:%i') AS m_c" .
+                        ", TIME_FORMAT(pubs.tuesday_open, '%H:%i') AS tu_o" .
+                        ", TIME_FORMAT(pubs.tuesday_close, '%H:%i') AS tu_c" .
+                        ", TIME_FORMAT(pubs.wednesday_open, '%H:%i') AS w_o" .
+                        ", TIME_FORMAT(pubs.wednesday_close, '%H:%i') AS w_c" .
+                        ", TIME_FORMAT(pubs.thursday_open, '%H:%i') AS th_o" .
+                        ", TIME_FORMAT(pubs.thursday_close, '%H:%i') AS th_c" .
+                        ", TIME_FORMAT(pubs.friday_open, '%H:%i') AS f_o" .
+                        ", TIME_FORMAT(pubs.friday_close, '%H:%i') AS f_c" .
+                        ", TIME_FORMAT(pubs.saturday_open, '%H:%i') AS sa_o" .
+                        ", TIME_FORMAT(pubs.saturday_close, '%H:%i') AS sa_c" .
+                        ", TIME_FORMAT(pubs.sunday_open, '%H:%i') AS su_o" .
+                        ", TIME_FORMAT(pubs.sunday_close, '%H:%i') AS su_c " .
                     "FROM pubs";
         
         // Endpoint called with a verb
@@ -528,6 +698,17 @@ class mmpAPI extends API {
             
             // Treat verb methods
             switch ($this->verb) {
+                // Research by pub name LIKE...
+                case 'find':
+                    if (count($args) !== 1) {
+                        return $this->generate_error(2);
+                    }
+                    
+                    $research = $this->remove_accents($args[0]);
+                    $query .=   " WHERE LOWER(pubs.name) LIKE LOWER('%$research%')" .
+                                " OR LOWER(pubs.address) LIKE LOWER('%$research%')";
+                    break;
+                
                 // Find all pubs serving a beer
                 case 'beer':
                 default:
@@ -551,6 +732,23 @@ class mmpAPI extends API {
                 $findById = true;
             }
             
+            // One numeric argument & beers => find all beers from this pub
+            if (count($args) == 2 && is_numeric($args[0]) && $args[1] == 'beers') {
+                $pub_id = $args[0];
+                $query =    "SELECT" .
+                            "  pubs.id AS pub_id" .
+                            ", beers.id AS id" .
+                            ", beers.name AS name" .
+                            ", beers.descript AS description" .
+                            ", beers.abv AS abv" .
+                            ", breweries.name AS brewery_name" .
+                            " FROM pubs" .
+                            " INNER JOIN beers_pubs ON pubs.id = beers_pubs.pub_id" .
+                            " INNER JOIN beers ON beers.id = beers_pubs.beer_id" .
+                            " LEFT OUTER JOIN breweries ON beers.brewery_id = breweries.id" .
+                            " WHERE pubs.id = $pub_id";
+            }
+            
             // API don't handle more than 1 argument for this endpoint
             else if (count($args) > 1) {
                 return $this->generate_error(2);
@@ -559,7 +757,7 @@ class mmpAPI extends API {
         
         // Order by selection
         // Default to beer name
-        $query .= " ORDER BY pubs.name ";
+        $query .= " ORDER BY name ";
         
         $conn = __getDB();
         $fetch = $conn->query($query);
@@ -582,7 +780,8 @@ class mmpAPI extends API {
         $errors = array(
             0 => "Only GET requests are allowed",
             1 => "Verb not allowed",
-            2 => "Wrong number of arguments"
+            2 => "Wrong number of arguments",
+            3 => "Incorrect payload for POST method"
         );
         
         return array(

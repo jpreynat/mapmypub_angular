@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html ng-app="mmpAdmin">
+<head>
+  <meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	
+  <title>mapMyPub | Admin</title>
+  
+  <link href="//fonts.googleapis.com/css?family=Playball" rel="stylesheet" />
+  <link href="//fonts.googleapis.com/css?family=Raleway:600,400,300,200" rel="stylesheet" />
+  <link href="//fonts.googleapis.com/css?family=Mrs+Sheppards" rel="stylesheet" />
+  <link href="//fonts.googleapis.com/css?family=Pacifico" rel="stylesheet" >
+
+  <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" />
+  <link href="css/mapMyPub.css" rel="stylesheet" />
+	
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.js"></script>
+  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.2/angular-resource.js"></script>
+  <script type="text/javascript" src="//maps.googleapis.com/maps/api/js?key=AIzaSyDgF9-hv09KVH_BYGZgv-Rund5lKZkLifM"></script>
+  <script type="text/javascript" src="js/moment.min.js"></script>
+  <script src="js/mmp-admin.js"></script>
+</head>
+
+<body class="admin-body" ng-controller="AppCtrl">
+<div id="page-container" class="container-fluid height-100" ng-click="containerClicked($event)">
+<div class="row height-100">
+<div class="col-xs-12 height-100">
+  <div class="site-title text-center">
+  	<h1 id="site-title">mapMyPub</h1>
+  	<h3>Administrator</h3>
+	</div>
+  
+  <!--Edit Pub's beers-->
+  <div id="addPubBeerForm" ng-controller="AddPubBeerCtrl" class="row" ng-cloak>
+	    <div class="col-xs-12 col-md-10 col-md-offset-1 admin-form" ng-class="{closed: formsStatus[1]}">
+	      <div class="admin-form-toggler"ng-click="toggleForm(1)"></div>
+        <h1>Edit Pub's beers</h1>
+        <div class="admin-form-content" ng-class="{invisible: formsStatus[1]}">
+          <form name="addPubBeer" novalidate ng-submit="addPubBeerSubmit()">
+            <div class="form-group text-left">
+              <label for="pubNameInput">Pub</label>
+              <input type="text" class="form-control" id="pubNameInput" placeholder="Search for a pub"
+  	      									ng-model="forms.pub.name" 	
+  	      									ng-change="getPubs()"
+  	      									ng-keyDown="browsePubsResults($event)" />
+    		      <ul id="pubs-typeahead" class="form-typeahead">
+    		        <li ng-repeat="pub in forms.pubs" data-id="{{pub.id}}" ng-click="setFormPub(pub)" ng-class-even="'colored'">{{pub.name}} <span class="brewery">{{pub.address}}</span></li>
+    		      </ul>
+            </div>
+          </form>
+          
+          <div class="text-center" ng-if="pub.id">
+            <h2>{{pub.name}}</h2>
+            <p>{{pub.address}}</p>
+            
+            <section class="menu" ng-controller="PubMenuCtrl">
+              <h3 ng-click="toggleMenu()">Menu</h3>
+              <div class="beers" ng-class="{hidden: !menuOpen}">
+                <hr/>
+                <div class="row list">
+                  <div ng-repeat="beer in pubBeers">
+                    <div class="beer-card">
+                      <i class="deleter fa fa-times-circle-o fa-lg" ng-click="deletePubBeer(beer)"></i>
+                      <h4>{{beer.brewery_name}}</h4>
+                      <h5>{{beer.name}}</h5>
+                      <p class="abv" ng-if="beer.abv !== '0'">{{beer.abv}} %</p>
+                      <hr ng-if="!!beer.description" />
+                      <p class="description" ng-if="!!beer.description">{{beer.description | shortenToPoint}}</p>
+                    </div>
+                    <!--Add clearfix after three columns-->
+                    <div class="clearfix" ng-if="($index + 1) % 3 === 0 || $last"></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <!--<ul id="pubBeersList" class="list-unstyled simple-list text-center">
+              <li ng-repeat="beer in pubBeers" data-id="{{beer.id}}" class="menu">
+                <span class="deleter" ng-click="deletePubBeer(beer)">X</span>
+                <span>{{beer.name}} </span>
+                <span class="brewery" ng-cloak><em>{{beer.brewery_name}}</em></span>
+              </li>
+            </ul>-->
+          
+          <section ng-if="!!pub.id">
+            <hr/>
+            <h1 class="text-left">Select beers to add</h1>
+            <form name="addBeer" novalidate ng-submit="addBeersToPub()">
+              <div class="form-group text-left">
+                <label for="BreweryInput">Brewery</label>
+                <input type="text" class="form-control" id="BreweryInput" placeholder="Search for a brewery"
+    	      									ng-model="forms.brewery.name" 	
+    	      									ng-change="getBreweries()"
+    	      									ng-keyDown="browseBreweriesResults($event)" />
+      		      <ul id="breweries-typeahead" class="form-typeahead">
+      		        <li ng-repeat="brewery in forms.breweries" data-id="{{brewery.id}}" ng-click="setFormBrewery(brewery)" ng-class-even="'colored'">{{brewery.name}}</li>
+      		      </ul>
+              </div>
+              
+              <div class="row" ng-if="!!brewery.id">
+                <div ng-controller="BeersListCtrl"
+                     ng-repeat="beer in forms.beers">
+                  <div class="text-center add-beer-card"
+                       ng-class="{selected: selected}"
+                       ng-click="toggleSelection(beer.id)"
+                       data-id="{{beer.id}}">
+                    <h4>{{beer.name}}</h4>
+                    <p class="abv" ng-if="beer.abv !== '0'">{{beer.abv}} %</p>
+                    <p class="description" ng-if="!!beer.description">{{beer.description | shortenToPoint}}</p>
+                  </div>
+                  <!--Add clearfix after two columns-->
+                  <div class="clearfix" ng-if="($index + 1) % 3 === 0 || $last"></div>
+                </div>
+              </div>
+              
+              <div class="col-xs-12 text-center">
+                <button ng-if="!!brewery.id" type="submit" class="btn btn-default">Add these beers!</button>
+              </div>
+                
+                
+                <!--SECOND OPTION SELECT FORM-->
+                <!--<select class="form-control">
+                  <option ng-repeat="beer in forms.beers" value="{{beer.id}}">
+                    <span>{{beer.name}} </span>
+                    <span class="brewery" ng-cloak><em>{{beer.brewery_name}}</em></span>
+                  </option>
+                </select>-->
+                
+                <!--FIRST OPTION DROPDOWN-->
+                <!--<label for="BeerInput">Beer</label>
+                <input type="text" class="form-control" id="BeerInput" placeholder="Search for a beer"
+    	      									ng-model="forms.beer.name" 	
+    	      									ng-change="getBeers()"
+    	      									ng-keyDown="browseBeersResults($event)" />
+      		      <ul id="beers-typeahead" class="form-typeahead">
+      		        <li ng-repeat="beer in forms.beers" data-id="{{beer.id}}" ng-click="setFormBeer(beer)" ng-class-even="'colored'">
+      		          <span>{{beer.name}} </span>
+                    <span class="brewery" ng-cloak><em>{{beer.brewery_name}}</em></span>
+      		        </li>
+      		      </ul>-->
+            </form>
+          </section>
+        </div>
+	    </div>
+  </div>
+  
+  <!--Add a new pub form-->
+	<div id="addPubForm" ng-controller="AddPubCtrl" class="row">
+	    <div class="col-xs-12 col-md-10 col-md-offset-1 admin-form" ng-class="{closed: formsStatus[0]}">
+	      <div class="admin-form-toggler"ng-click="toggleForm(0)"></div>
+        <h1>Add a new pub</h1>
+        <div class="admin-form-content" ng-class="{invisible: formsStatus[0]}">
+          <form name="addPub" novalidate ng-submit="addPubSubmit()">
+            <div class="form-group text-left">
+              <label for="pubNameInput">Name</label>
+              <input type="text" class="form-control" id="pubNameInput" name="pubName" placeholder="Les Berthom Terreaux..." required
+                    ng-model="pub.name" 
+                    ng-change="resetSubmitState()" />
+              <div ng-show="addPub.$submitted || addPub.pubName.$touched" class="form-alert">
+                <div ng-show="addPub.pubName.$error.required">A name is required</div>
+              </div>
+            </div>
+            <div class="form-group text-left">
+              <label for="pubAddressInput">Address</label>
+              <input type="text" class="form-control" id="pubAddressInput" name="pubAddress" placeholder="24, rue Pizay, 69001 Lyon..." required 
+                    ng-model="pub.address" 
+                    ng-change="resetSubmitState()" />
+              <div ng-show="addPub.$submitted || addPub.pubAddress.$touched" class="form-alert">
+                <div ng-show="addPub.pubAddress.$error.required">We need an address to find it</div>
+              </div>
+            </div>
+                
+            <div id="pref-pane-alert" class="hidden">
+              <span>
+                This place couldn't be found.<br/>
+                Please check the address and try again.
+              </span>
+            </div>
+            <div class="col-xs-12 text-center">
+              <button type="submit" class="btn btn-default">{{buttonText}}</button>
+            </div>
+          </form>
+        </div>
+	    </div>
+  </div>
+  
+</div>
+</div>
+</div>
+</body>
+</html>

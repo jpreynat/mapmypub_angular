@@ -26,15 +26,22 @@
 <div id="page-container" class="container-fluid height-100" ng-click="containerClicked($event)">
 <div class="row height-100">
 <div class="col-xs-12 text-center height-100">
-	<h1 id="site-title">mapMyPub</h1>
+	<div class="site-title">
+		<h1 id="site-title">mapMyPub</h1>
+	</div>
 
 	<div id="findBeerForm" ng-controller="FindBeerCtrl" class="row">
 		<div class="col-xs-12 col-md-6 col-md-offset-3 text-center">
 		  <form>
 		    <div class="form-group text-left">
-		      <input ng-model="beerInput.name" ng-change="getBeers()" ng-focus="showInfoPanel()" ng-blur="hideInfoPanel()" type="text" class="form-control" id="beerNameInput" placeholder="I'm looking for a fresh..." />
+		      <input type="text" class="form-control" id="beerNameInput" placeholder="I'm looking for a fresh..."
+		      									ng-model="beerInput.name" 	
+		      									ng-change="getBeers()" 
+		      									ng-focus="showInfoPanel()" 
+		      									ng-blur="hideInfoPanel()" 
+		      									ng-keyDown="browseResults($event)" />
 		      <ul id="beers-typeahead" class="form-typeahead">
-		        <li ng-repeat="beer in beers" ng-click="setFormBeer(beer)" ng-class-even="'colored'">{{beer.name}} <span class="brewery">{{beer.brewery_name}}</span></li>
+		        <li ng-repeat="beer in beers" data-id="{{beer.id}}" ng-click="setFormBeer(beer)" ng-class-even="'colored'">{{beer.name}} <span class="brewery">{{beer.brewery_name}}</span></li>
 		      </ul>
 		    </div>
 		  </form>
@@ -69,7 +76,6 @@
 				    </dl>
 				  </div>
 				</div>
-			<!--</div>-->
 			</div>
 		</div>
 	</div>
@@ -82,14 +88,8 @@
 </div>
 </div>
 </div>
-<div id="footer">
+<div id="footer" class="hidden-xs hidden-sm">
 	<img id="bg-bottom" src="img/beer-lineup.png" class="img-responsive" />
 </div>
 </body>
 </html>
-
-<!--
-<template name="breweryOption">
-	<option value={{id}} {{isSelectedBrewery}}>{{name}}</option>
-</template>
--->

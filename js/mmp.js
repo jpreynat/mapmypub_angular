@@ -1,6 +1,9 @@
 var mmp = angular.module('mapMyPub', ['ngAnimate', 'ngResource']);
 
-mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'BeerPubs', 'Breweries', 'Categories', 'selectedBeer', function ($scope, $timeout, Beers, BeerPubs, Breweries, Categories, selectedBeer) {
+/**
+ * Application controller
+ * */
+mmp.controller('AppCtrl', ['$scope', 'Beers', 'BeerPubs', 'selectedBeer', function ($scope, Beers, BeerPubs, selectedBeer) {
   
   $scope.selectedBeer = selectedBeer;
   $scope.selectedBeerPubs = [];
@@ -18,43 +21,10 @@ mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'BeerPubs', 'Breweries
         refreshMap();
       });
     }
-  });
-  
-  
-  /**
-   * PrefPane manager
-   * */
-  var animationDelay = 160;
-  
-  $scope.prefPane = {
-    template: null,
-    active: false
-  };
-  
-  $scope.setPrefPane = function (e) {
-    if ($scope.prefPane.active) {
-      $scope.closePrefPane();
-      $timeout(function () {
-        $scope.openPrefPane(e);
-      }, animationDelay);
+    else {
+      clearMarkers();
     }
-    else
-      $scope.openPrefPane(e);
-  }
-  
-  $scope.openPrefPane = function (e) {
-    $scope.prefPane = {
-      template: 'templates/' + e.currentTarget.id + '.html',
-      active: true
-    };
-  };
-  
-  $scope.closePrefPane = function () {
-    $scope.prefPane = {
-      template: null,
-      active: false
-    };
-  };
+  });
   
   /**
    * Google Maps API properties
@@ -81,13 +51,6 @@ mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'BeerPubs', 'Breweries
   function refreshMap () {
     // retrieve mmpMap and its bounds
     var mapBounds = $scope.map.getBounds();
-  
-    // clear old markers and infowindows
-    /*
-    if (!!mmpMarkers.length) {
-      removeMarkers();
-    }
-    */
   
     // Put each pub in bounds on the map
     $scope.selectedBeerPubs.forEach(function (pub) {
@@ -119,6 +82,7 @@ mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'BeerPubs', 'Breweries
     });
   }
   
+  // add specific classes to info window elements for CSS styling using jQuery
   function styleInfoWindow (infowindow) {
     google.maps.event.addListener(infowindow, 'domready', function() {
        var iwOuter = $('.gm-style-iw'),
@@ -130,6 +94,7 @@ mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'BeerPubs', 'Breweries
     });
   }
   
+  // remove unuseful markers from the map
   function removeMarkers () {
     // retrieve mmpMap and its bounds
     var mapBounds = $scope.map.getBounds();
@@ -147,6 +112,7 @@ mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'BeerPubs', 'Breweries
     });
   }
   
+  // clear all set markers on the map
   function clearMarkers () {
     mmpMarkers.forEach(function (marker) {
       marker.setMap(null);
@@ -160,6 +126,7 @@ mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'BeerPubs', 'Breweries
     mmpMarkers = [];
   }
   
+  // Google Map info window generator
   function infoWindowTemplate (pub) {
     var contentString = '<h5 class="infowindow-title text-left">' + pub.name + '</h5>' +
                         '<p class="infowindow-content text-left">' + pub.address + '</p>' +
@@ -176,26 +143,59 @@ mmp.controller('AppCtrl', ['$scope', '$timeout', 'Beers', 'BeerPubs', 'Breweries
     return contentString;
   }
   
+  // schedule formatter
   function infoWindowOpenHours (day, open, close) {
-    return '<dt>' + day + '</dt><dd>' + open + ' - ' + close + '</dd>';
+    return  '<dt>' + day + '</dt><dd>' + open + ' - ' + close + '</dd>';
   }
   
+  // is a pub open at this exact moment
   function isOpen (pub) {
-    var days = ['su', 'm', 'tu', 'w', 'th', 'f', 'sa'],
-        currentMoment = moment(),
-        today = currentMoment.day(),
-        mysql_day = days[today],
-        openMoment = moment(pub[mysql_day + '_o'], 'HH:mm'),
-        closeMoment = moment(pub[mysql_day + '_c'], 'HH:mm');
+    var 
+        days =                  ['su', 'm', 'tu', 'w', 'th', 'f', 'sa'],
+        currentTime =           moment(),
+        
+        mysql_yesterday =       moment().subtract(1, 'd').day(),
+        yesterday =             days[mysql_yesterday],
+        yesterday_open_sched =  moment.duration(pub[yesterday + '_o'], 'HH:mm'),
+        yesterday_close_sched = moment.duration(pub[yesterday + '_c'], 'HH:mm'),
+        yesterday_open =        moment().hour(0).minute(0).second(0),
+        yesterday_close =       moment().hour(0).minute(0).second(0),
+        
+        mysql_today =           moment().day(),
+        today =                 days[mysql_today],
+        today_open_sched =      moment.duration(pub[today + '_o'], 'HH:mm'),
+        today_close_sched =     moment.duration(pub[today + '_c'], 'HH:mm'),
+        today_open =            moment().hour(0).minute(0).second(0),
+        today_close =           moment().hour(0).minute(0).second(0);
     
-    return currentMoment.isBetween(openMoment, closeMoment);
+    yesterday_open.add(yesterday_open_sched);
+    yesterday_close.add(yesterday_close_sched);
+    
+    today_open.add(today_open_sched);
+    today_close.add(today_close_sched);
+    
+    // Fix closing times based on schedule
+    if (yesterday_close_sched.hours() < yesterday_open_sched.hours()) {
+      yesterday_close.add(1, 'd');
+    }
+    
+    if (today_close_sched.hours() < today_open_sched.hours()) {
+      today_close.add(1, 'd');
+    }
+    
+    return currentTime.isBetween(yesterday_open, yesterday_close) || currentTime.isBetween(today_open, today_close);
   }
   
 }]);
 
-
+/**
+ * Main input controller
+ * */
 mmp.controller('FindBeerCtrl', ['$scope', 'Beers', 'selectedBeer', function ($scope, Beers, selectedBeer) {
-
+  var isLookingForBeer = false,
+      dropdownSelected = null,
+      dropdownIndex = -1;
+  
   $scope.beerInput = selectedBeer.get();
   
   $scope.beer = selectedBeer.get();
@@ -203,6 +203,55 @@ mmp.controller('FindBeerCtrl', ['$scope', 'Beers', 'selectedBeer', function ($sc
   $scope.beers = [];
   
   $scope.displayInfoPanel = false;
+  
+  $scope.browseResults = function (e) {
+    var $dropdown = $('#beers-typeahead').children();
+    
+    if ($dropdown.length < 1)
+      return;
+    
+    // on down arrow key
+    if (e.keyCode === 40) {
+      e.preventDefault();
+      dropdownIndex = (dropdownIndex + 1) % $dropdown.length;
+      
+      if (!!dropdownSelected)
+        dropdownSelected.toggleClass('dropdown-selected');
+        
+      dropdownSelected = $($dropdown[dropdownIndex]);
+      dropdownSelected.toggleClass('dropdown-selected');
+      
+      return false;
+    }
+    
+    // on up arrow key
+    if (e.keyCode === 38) {
+      e.preventDefault();
+      dropdownIndex = (dropdownIndex - 1) % $dropdown.length;
+      
+      if (dropdownIndex < 0)
+        dropdownIndex = $dropdown.length - 1;
+        
+      if (!!dropdownSelected)
+        dropdownSelected.toggleClass('dropdown-selected');
+        
+      dropdownSelected = $($dropdown[dropdownIndex]);
+      dropdownSelected.toggleClass('dropdown-selected');
+      
+      return false;
+    }
+    
+    // on enter key
+    if (e.keyCode === 13) {
+      e.preventDefault();
+      var beer = {
+            id: dropdownSelected.attr('data-id')
+          };
+      
+      $scope.setFormBeer(beer);
+      $(e.currentTarget).blur();
+    }
+  };
   
   $scope.showInfoPanel = function () {
     if (!!$scope.beer.id) {
@@ -225,20 +274,32 @@ mmp.controller('FindBeerCtrl', ['$scope', 'Beers', 'selectedBeer', function ($sc
   };
   
   $scope.getBeers = function () {
-    var term = $scope.beerInput.name.trim();
-    
-    $scope.hideInfoPanel();
-    $scope.beers = [];
-    
-    if (!!term) {
-      Beers.retrieve({}, { 
-          filters: ['brewery'], 
-          limit: 10, 
-          research: term 
-          
-        }, function (data) {
-          $scope.beers = data;
-      });
+    if (!isLookingForBeer) {
+      setTimeout(function () {
+        isLookingForBeer = true;
+        
+        var term = $scope.beerInput.name.trim();
+        
+        $scope.hideInfoPanel();
+        $scope.beers = [];
+        
+        if (!!term) {
+          Beers.retrieve({}, { 
+              filters: ['brewery'], 
+              limit: 10, 
+              research: term 
+              
+            }, function (data) {
+              $scope.beers = data;
+              isLookingForBeer = false;
+          });
+        }
+        else {
+          selectedBeer.set({});
+          $scope.beer = {};
+          isLookingForBeer = false;
+        }
+      }, 500);
     }
   };
 }]);
