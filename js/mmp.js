@@ -31,7 +31,7 @@ mmp.controller('AppCtrl', ['$scope', 'Beers', 'BeerPubs', 'selectedBeer', functi
    * */
   var mapOptions = {
         center: new google.maps.LatLng(45.7674631, 4.8335123),
-        zoom: 17,
+        zoom: 15,
         mapTypeId: google.maps.MapTypeId.ROADMAP
       },
       openedInfowindow = null,
@@ -57,16 +57,19 @@ mmp.controller('AppCtrl', ['$scope', 'Beers', 'BeerPubs', 'selectedBeer', functi
   
       // retrieve LatLng of the current pub
       var latlng = new google.maps.LatLng(pub.lat, pub.lng),
+      // virtual id based on pub's name + lat + lng
+          marker_id = pub.name + pub.lat + pub.lng,
           alreadySet = mmpMarkers.some(function (marker) {
-            return marker.title === pub.name;
+            return marker.id === marker_id;
           });
       
       // place on the map if in bounds and not already set
       if (mapBounds.contains(latlng) && !alreadySet) {
-        var marker = new google.maps.Marker({
+      var marker = new google.maps.Marker({
           map: $scope.map,
           position: latlng,
-          title: pub.name
+          title: pub.name,
+          id: marker_id
         });
   
         var contentString = infoWindowTemplate(pub),
@@ -128,18 +131,21 @@ mmp.controller('AppCtrl', ['$scope', 'Beers', 'BeerPubs', 'selectedBeer', functi
   
   // Google Map info window generator
   function infoWindowTemplate (pub) {
-    var contentString = '<h5 class="infowindow-title text-left">' + pub.name + '</h5>' +
+    var 
+        contentString = '<h5 class="infowindow-title text-left">' + pub.name + '</h5>' +
                         '<p class="infowindow-content text-left">' + pub.address + '</p>' +
-                        '<p class="infowindow-status ' + (isOpen(pub) ? 'pub-open' : 'pub-closed') + '">' + (isOpen(pub) ? 'Open!' : 'Closed') + '</p>' +
-                        '<dl class="dl-horizontal text-left">' +
-                        infoWindowOpenHours('Mon', pub.m_o, pub.m_c) +
-                        infoWindowOpenHours('Tue', pub.tu_o, pub.tu_c) +
-                        infoWindowOpenHours('Wed', pub.w_o, pub.w_c) +
-                        infoWindowOpenHours('Thu', pub.th_o, pub.th_c) +
-                        infoWindowOpenHours('Fri', pub.f_o, pub.f_c) +
-                        infoWindowOpenHours('Sat', pub.sa_o, pub.sa_c) +
-                        infoWindowOpenHours('Sun', pub.su_o, pub.su_c) +
-                        '<dl/>';
+                        (hasSchedule(pub) ?
+                          '<p class="infowindow-status ' + (isOpen(pub) ? 'pub-open' : 'pub-closed') + '">' + (isOpen(pub) ? 'Open!' : 'Closed') + '</p>' +
+                          '<dl class="dl-horizontal text-left">' +
+                          infoWindowOpenHours('Mon', pub.m_o, pub.m_c) +
+                          infoWindowOpenHours('Tue', pub.tu_o, pub.tu_c) +
+                          infoWindowOpenHours('Wed', pub.w_o, pub.w_c) +
+                          infoWindowOpenHours('Thu', pub.th_o, pub.th_c) +
+                          infoWindowOpenHours('Fri', pub.f_o, pub.f_c) +
+                          infoWindowOpenHours('Sat', pub.sa_o, pub.sa_c) +
+                          infoWindowOpenHours('Sun', pub.su_o, pub.su_c) +
+                          '<dl/>' :
+                          '');
     return contentString;
   }
   
@@ -148,11 +154,18 @@ mmp.controller('AppCtrl', ['$scope', 'Beers', 'BeerPubs', 'selectedBeer', functi
     return  '<dt>' + day + '</dt><dd>' + open + ' - ' + close + '</dd>';
   }
   
+  // check if a pub's schedule is set
+  function hasSchedule (pub) {
+    return pub.m_o || pub.tu_o || pub.w_o || pub.th_o || pub.f_o || pub.sa_o || pub.su_o;
+  }
+  
   // is a pub open at this exact moment
   function isOpen (pub) {
     var 
         days =                  ['su', 'm', 'tu', 'w', 'th', 'f', 'sa'],
         currentTime =           moment(),
+        
+        today_start =           moment().hour(0).minute(0).second(0),
         
         mysql_yesterday =       moment().subtract(1, 'd').day(),
         yesterday =             days[mysql_yesterday],
@@ -168,6 +181,8 @@ mmp.controller('AppCtrl', ['$scope', 'Beers', 'BeerPubs', 'selectedBeer', functi
         today_open =            moment().hour(0).minute(0).second(0),
         today_close =           moment().hour(0).minute(0).second(0);
     
+    yesterday_open.subtract(1, 'd');
+    yesterday_close.subtract(1, 'd');
     yesterday_open.add(yesterday_open_sched);
     yesterday_close.add(yesterday_close_sched);
     
@@ -183,7 +198,14 @@ mmp.controller('AppCtrl', ['$scope', 'Beers', 'BeerPubs', 'selectedBeer', functi
       today_close.add(1, 'd');
     }
     
-    return currentTime.isBetween(yesterday_open, yesterday_close) || currentTime.isBetween(today_open, today_close);
+    console.log('******************************\n'+pub.name+'\n****************************\n');
+    console.log(today_start);
+    console.log(yesterday_close);
+    console.log(today_open);
+    console.log(today_close);
+    console.log('**********************************************************\n');
+    
+    return currentTime.isBetween(today_start, yesterday_close) || currentTime.isBetween(today_open, today_close);
   }
   
 }]);

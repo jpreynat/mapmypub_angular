@@ -29,7 +29,8 @@
 <div class="row height-100">
 <div class="col-xs-12 height-100">
   <div class="site-title text-center">
-  	<h1 id="site-title">mapMyPub</h1>
+  	<!--<h1 id="site-title">mapMyPub</h1>-->
+  	<img src="../img/mmp-title.png" alt="MapMyPub" />
   	<h3>Administrator</h3>
 	</div>
   
@@ -37,7 +38,7 @@
   <div id="addPubBeerForm" ng-controller="AddPubBeerCtrl" class="row" ng-cloak>
 	    <div class="col-xs-12 col-md-10 col-md-offset-1 admin-form" ng-class="{closed: formsStatus[1]}">
 	      <div class="admin-form-toggler"ng-click="toggleForm(1)"></div>
-        <h1>Edit Pub's beers</h1>
+        <h1>Edit a Pub</h1>
         <div class="admin-form-content" ng-class="{invisible: formsStatus[1]}">
           <form name="addPubBeer" novalidate ng-submit="addPubBeerSubmit()">
             <div class="form-group text-left">
@@ -52,57 +53,188 @@
             </div>
           </form>
           
-          <div class="text-center" ng-if="pub.id">
+          <!--PUB DETAILS-->
+          <div class="text-center" ng-if="!!pub.id">
             <h2>{{pub.name}}</h2>
             <p>{{pub.address}}</p>
             
-            <section class="menu" ng-controller="PubMenuCtrl">
-              <h3 ng-click="toggleMenu()">Menu</h3>
-              <div class="beers" ng-class="{hidden: !menuOpen}">
-                <hr/>
-                <div class="row list">
-                  <div ng-repeat="beer in pubBeers">
-                    <div class="beer-card">
-                      <i class="deleter fa fa-times-circle-o fa-lg" ng-click="deletePubBeer(beer)"></i>
-                      <h4>{{beer.brewery_name}}</h4>
-                      <h5>{{beer.name}}</h5>
-                      <p class="abv" ng-if="beer.abv !== '0'">{{beer.abv}} %</p>
-                      <hr ng-if="!!beer.description" />
-                      <p class="description" ng-if="!!beer.description">{{beer.description | shortenToPoint}}</p>
-                    </div>
-                    <!--Add clearfix after three columns-->
-                    <div class="clearfix" ng-if="($index + 1) % 3 === 0 || $last"></div>
+            <section class="schedule" ng-controller="PubScheduleCtrl">
+              <h3 ng-click="toggleMenu()">Schedule</h3>
+              <hr ng-class="{hidden: !menuOpen}"/>
+              <form name="pubSchedule" novalidate class="form-horizontal" ng-class="{hidden: !menuOpen}" ng-submit="editScheduleSubmit()" ng-cloak>
+                <!--MONDAY-->
+                <div class="form-group">
+                  <label for="mondayOpenInput" class="col-sm-3 control-label">
+                    <span class="day">Monday</span>
+                    Opening
+                  </label>
+                  <div class="col-sm-2">
+                    <select name="mondayOpenInput" class="form-control" ng-model="pub.m_o">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.m_o" value="{{time}}">{{time}}</option>
+                    </select>
                   </div>
+                  <label for="mondayCloseInput" class="col-sm-3 control-label">Closing</label>
+                  <div class="col-sm-2">
+                    <select name="mondayCloseInput" class="form-control" ng-model="pub.m_c">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.m_c" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                </div>
+                <!--TUESDAY-->
+                <div class="form-group">
+                  <label for="tuesdayOpenInput" class="col-sm-3 control-label">
+                    <span class="day">Tuesday</span>
+                    Opening
+                  </label>
+                  <div class="col-sm-2">
+                    <select name="tuesdayOpenInput" class="form-control" ng-model="pub.tu_o">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.tu_o" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                  <label for="tuesdayCloseInput" class="col-sm-3 control-label">Closing</label>
+                  <div class="col-sm-2">
+                    <select name="tuesdayCloseInput" class="form-control" ng-model="pub.tu_c">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.tu_c" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                </div>
+                <!--WEDNESDAY-->
+                <div class="form-group">
+                  <label for="wednesdayOpenInput" class="col-sm-3 control-label">
+                    <span class="day">Wednesday</span>
+                    Opening
+                  </label>
+                  <div class="col-sm-2">
+                    <select name="wednesdayOpenInput" class="form-control" ng-model="pub.w_o">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.w_o" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                  <label for="wednesdayCloseInput" class="col-sm-3 control-label">Closing</label>
+                  <div class="col-sm-2">
+                    <select name="wednesdayCloseInput" class="form-control" ng-model="pub.w_c">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.w_c" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                </div>
+                <!--THURSDAY-->
+                <div class="form-group">
+                  <label for="thursdayOpenInput" class="col-sm-3 control-label">
+                    <span class="day">Thursday</span>
+                    Opening
+                  </label>
+                  <div class="col-sm-2">
+                    <select name="thursdayOpenInput" class="form-control" ng-model="pub.th_o">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.th_o" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                  <label for="thursdayCloseInput" class="col-sm-3 control-label">Closing</label>
+                  <div class="col-sm-2">
+                    <select name="thursdayCloseInput" class="form-control" ng-model="pub.th_c">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.th_c" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                </div>
+                <!--FRIDAY-->
+                <div class="form-group">
+                  <label for="fridayOpenInput" class="col-sm-3 control-label">
+                    <span class="day">Friday</span>
+                    Opening
+                  </label>
+                  <div class="col-sm-2">
+                    <select name="fridayOpenInput" class="form-control" ng-model="pub.f_o">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.f_o" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                  <label for="fridayCloseInput" class="col-sm-3 control-label">Closing</label>
+                  <div class="col-sm-2">
+                    <select name="fridayCloseInput" class="form-control" ng-model="pub.f_c">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.f_c" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                </div>
+                <!--SATURDAY-->
+                <div class="form-group">
+                  <label for="saturdayOpenInput" class="col-sm-3 control-label">
+                    <span class="day">Saturday</span>
+                    Opening
+                  </label>
+                  <div class="col-sm-2">
+                    <select name="saturdayOpenInput" class="form-control" ng-model="pub.sa_o">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.sa_o" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                  <label for="saturdayCloseInput" class="col-sm-3 control-label">Closing</label>
+                  <div class="col-sm-2">
+                    <select name="saturdayCloseInput" class="form-control" ng-model="pub.sa_c">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.sa_c" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                </div>
+                <!--SUNDAY-->
+                <div class="form-group">
+                  <label for="sundayOpenInput" class="col-sm-3 control-label">
+                    <span class="day">Sunday</span>
+                    Opening
+                  </label>
+                  <div class="col-sm-2">
+                    <select name="sundayOpenInput" class="form-control" ng-model="pub.su_o">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.su_o" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                  <label for="sundayCloseInput" class="col-sm-3 control-label">Closing</label>
+                  <div class="col-sm-2">
+                    <select name="sundayCloseInput" class="form-control" ng-model="pub.su_c">
+                      <option ng-repeat="time in pubTimes" ng-selected="time === pub.su_c" value="{{time}}">{{time}}</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="row">
+                  <div class="col-xs-12 text-center">
+                    <button type="submit" class="btn btn-default" ng-disabled="pubSchedule.$pristine">Save</button>
+                  </div>
+                </div>
+              </form>
+            </section>
+            
+            <!--PUB MENU-->
+            <section class="menu" ng-controller="PubMenuCtrl">
+              <hr/>
+              <h3 ng-click="toggleMenu()">Menu</h3>
+              <hr ng-class="{hidden: !menuOpen}"/>
+              
+              <div class="beers" ng-class="{hidden: !menuOpen}">
+                <div ng-repeat="beer in pubBeers" class="beer-card">
+                  <i class="deleter fa fa-times-circle-o fa-lg" ng-click="deletePubBeer(beer)"></i>
+                  <h4>{{beer.brewery_name}}</h4>
+                  <h5>{{beer.name}}</h5>
+                  <p class="abv" ng-if="beer.abv !== '0'">{{beer.abv}} %</p>
+                  <hr ng-if="!!beer.description" />
+                  <p class="description" ng-if="!!beer.description">{{beer.description | shortenToPoint}}</p>
                 </div>
               </div>
             </section>
-            <!--<ul id="pubBeersList" class="list-unstyled simple-list text-center">
-              <li ng-repeat="beer in pubBeers" data-id="{{beer.id}}" class="menu">
-                <span class="deleter" ng-click="deletePubBeer(beer)">X</span>
-                <span>{{beer.name}} </span>
-                <span class="brewery" ng-cloak><em>{{beer.brewery_name}}</em></span>
-              </li>
-            </ul>-->
-          
-          <section ng-if="!!pub.id">
-            <hr/>
-            <h1 class="text-left">Select beers to add</h1>
-            <form name="addBeer" novalidate ng-submit="addBeersToPub()">
-              <div class="form-group text-left">
-                <label for="BreweryInput">Brewery</label>
-                <input type="text" class="form-control" id="BreweryInput" placeholder="Search for a brewery"
-    	      									ng-model="forms.brewery.name" 	
-    	      									ng-change="getBreweries()"
-    	      									ng-keyDown="browseBreweriesResults($event)" />
-      		      <ul id="breweries-typeahead" class="form-typeahead">
-      		        <li ng-repeat="brewery in forms.breweries" data-id="{{brewery.id}}" ng-click="setFormBrewery(brewery)" ng-class-even="'colored'">{{brewery.name}}</li>
-      		      </ul>
-              </div>
-              
-              <div class="row" ng-if="!!brewery.id">
-                <div ng-controller="BeersListCtrl"
-                     ng-repeat="beer in forms.beers">
-                  <div class="text-center add-beer-card"
+            
+            <!--BEERS SELECTION-->
+            <section>
+              <hr/>
+              <h1 class="text-left">Select beers to add</h1>
+              <form name="addBeer" novalidate ng-submit="addBeersToPub()">
+                <div class="form-group text-left">
+                  <label for="BreweryInput">Brewery</label>
+                  <input type="text" class="form-control" id="BreweryInput" placeholder="Search for a brewery"
+      	      									ng-model="forms.brewery.name" 	
+      	      									ng-change="getBreweries()"
+      	      									ng-keyDown="browseBreweriesResults($event)" />
+        		      <ul id="breweries-typeahead" class="form-typeahead">
+        		        <li ng-repeat="brewery in forms.breweries" data-id="{{brewery.id}}" ng-click="setFormBrewery(brewery)" ng-class-even="'colored'">{{brewery.name}}</li>
+        		      </ul>
+                </div>
+                
+                <div class="beers" ng-if="!!brewery.id">
+                  <div ng-controller="BeersListCtrl"
+                       ng-repeat="beer in forms.beers"
+                       class="text-center add-beer-card"
                        ng-class="{selected: selected}"
                        ng-click="toggleSelection(beer.id)"
                        data-id="{{beer.id}}">
@@ -110,38 +242,16 @@
                     <p class="abv" ng-if="beer.abv !== '0'">{{beer.abv}} %</p>
                     <p class="description" ng-if="!!beer.description">{{beer.description | shortenToPoint}}</p>
                   </div>
-                  <!--Add clearfix after two columns-->
-                  <div class="clearfix" ng-if="($index + 1) % 3 === 0 || $last"></div>
                 </div>
-              </div>
-              
-              <div class="col-xs-12 text-center">
-                <button ng-if="!!brewery.id" type="submit" class="btn btn-default">Add these beers!</button>
-              </div>
                 
-                
-                <!--SECOND OPTION SELECT FORM-->
-                <!--<select class="form-control">
-                  <option ng-repeat="beer in forms.beers" value="{{beer.id}}">
-                    <span>{{beer.name}} </span>
-                    <span class="brewery" ng-cloak><em>{{beer.brewery_name}}</em></span>
-                  </option>
-                </select>-->
-                
-                <!--FIRST OPTION DROPDOWN-->
-                <!--<label for="BeerInput">Beer</label>
-                <input type="text" class="form-control" id="BeerInput" placeholder="Search for a beer"
-    	      									ng-model="forms.beer.name" 	
-    	      									ng-change="getBeers()"
-    	      									ng-keyDown="browseBeersResults($event)" />
-      		      <ul id="beers-typeahead" class="form-typeahead">
-      		        <li ng-repeat="beer in forms.beers" data-id="{{beer.id}}" ng-click="setFormBeer(beer)" ng-class-even="'colored'">
-      		          <span>{{beer.name}} </span>
-                    <span class="brewery" ng-cloak><em>{{beer.brewery_name}}</em></span>
-      		        </li>
-      		      </ul>-->
-            </form>
-          </section>
+                <div class="row">
+                  <div class="col-xs-12 text-center">
+                    <button ng-if="!!brewery.id" type="submit" class="btn btn-default">Add these beers!</button>
+                  </div>
+                </div>
+              </form>
+            </section>
+          </div>
         </div>
 	    </div>
   </div>
@@ -156,8 +266,7 @@
             <div class="form-group text-left">
               <label for="pubNameInput">Name</label>
               <input type="text" class="form-control" id="pubNameInput" name="pubName" placeholder="Les Berthom Terreaux..." required
-                    ng-model="pub.name" 
-                    ng-change="resetSubmitState()" />
+                    ng-model="pub.name" />
               <div ng-show="addPub.$submitted || addPub.pubName.$touched" class="form-alert">
                 <div ng-show="addPub.pubName.$error.required">A name is required</div>
               </div>
@@ -165,8 +274,7 @@
             <div class="form-group text-left">
               <label for="pubAddressInput">Address</label>
               <input type="text" class="form-control" id="pubAddressInput" name="pubAddress" placeholder="24, rue Pizay, 69001 Lyon..." required 
-                    ng-model="pub.address" 
-                    ng-change="resetSubmitState()" />
+                    ng-model="pub.address" />
               <div ng-show="addPub.$submitted || addPub.pubAddress.$touched" class="form-alert">
                 <div ng-show="addPub.pubAddress.$error.required">We need an address to find it</div>
               </div>
@@ -179,7 +287,7 @@
               </span>
             </div>
             <div class="col-xs-12 text-center">
-              <button type="submit" class="btn btn-default">{{buttonText}}</button>
+              <button type="submit" class="btn btn-default" ng-disabled="!addPub.$valid">{{buttonText}}</button>
             </div>
           </form>
         </div>

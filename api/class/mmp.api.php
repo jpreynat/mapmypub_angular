@@ -475,17 +475,25 @@ class mmpAPI extends API {
     /**
      * Endpoint: api/pubs
      * Methods
-     *      api/pubs
-     *          @params none
-     *          @return an array of all pubs
+     *      GET     api/pubs
+     *                  @params none
+     *                  @return an array of all pubs
      * 
-     *      api/pubs/id
-     *          @params id: integer
-     *          @return the corresponding pub object
+     *      GET     api/pubs/id
+     *                  @params id: integer
+     *                  @return the corresponding pub object
      * 
-     *      api/pubs/beer/id
-     *          @params id: integer
-     *          @return an array of all pubs where one can find this beer
+     *      POST    api/pubs/find/term
+     *                  @params term: string
+     *                  @return an array of all pubs whose part of the name or address matches the term parameter
+     * 
+     *      GET     api/pubs/beer/id
+     *                  @params id: integer
+     *                  @return an array of all pubs where one can find this beer
+     * 
+     *      DELETE  api/pubs/beer/id
+     *                  @params id: integer
+     *                  @return {"removed": nbItems} where nbItems is the number of rows deleted (1 if OK / 0 otherwise)
      * 
      * Default sort order is pub.name
      * 
@@ -544,7 +552,7 @@ class mmpAPI extends API {
             return array('removed' => $removed);
         }
         
-        /* Handle posting a new pub or adding beers to a pub*/
+        /* Handle posting a new pub, adding beers to a pub or updating the pub's schedule*/
         if ($this->method == 'POST') {
             // Transcodifaction from application/json payload
             if (empty($_POST)) {
@@ -594,66 +602,105 @@ class mmpAPI extends API {
             }
             
             else {
-                /**
-                 * TODO: Additionnal controls on payload values
-                 * */
-                if (!array_key_exists('name', $_POST) && !array_key_exists('address', $_POST)) {
-                    return $this->generate_error(3);
+                /* No args passed => case of posting a new pub */
+                if (count($args) == 0) {
+                    if (!array_key_exists('name', $_POST) && !array_key_exists('address', $_POST)) {
+                        return $this->generate_error(3);
+                    }
+                    
+                    $pub = $_POST;
+                    
+                    // Escaping strings
+                    foreach ($pub as &$value) {
+                        if (is_string($value))
+                            $value = $conn->quote($value);
+                    }
+                    
+                    $query =                                            "INSERT INTO pubs (" .
+                                                                        "last_mod " .
+                                                                        ", name" .
+                                                                        ", address" .
+                                                                        ", lat" .
+                                                                        ", lng" .
+                                 (in_array('description', $pub) ?       ", descript"        : "") .
+                                 (in_array('add_user', $pub) ?          ", add_user"        : "") .
+                                 (in_array('m_o', $pub) ?               ", monday_open"     : "") .
+                                 (in_array('m_c', $pub) ?               ", monday_close"    : "") .
+                                 (in_array('tu_o', $pub) ?              ", tuesday_open"    : "") .
+                                 (in_array('tu_c', $pub) ?              ", tuesday_close"   : "") .
+                                 (in_array('w_o', $pub) ?               ", wednesday_open"  : "") .
+                                 (in_array('w_c', $pub) ?               ", wednesday_close" : "") .
+                                 (in_array('th_o', $pub) ?              ", thursday_open"   : "") .
+                                 (in_array('th_c', $pub) ?              ", thursday_close"  : "") .
+                                 (in_array('f_o', $pub) ?               ", friday_open"     : "") .
+                                 (in_array('f_c', $pub) ?               ", friday_close"    : "") .
+                                 (in_array('sa_o', $pub) ?              ", saturday_open"   : "") .
+                                 (in_array('sa_c', $pub) ?              ", saturday_close"  : "") .
+                                 (in_array('su_o', $pub) ?              ", sunday_open"     : "") .
+                                 (in_array('su_c', $pub) ?              ", sunday_close"    : "") .
+                                                                        ") VALUES (" .
+                                                                        "NOW()" .
+                                                                        ", " . $pub['name'] .
+                                                                        ", " . $pub['address'] .
+                                                                        ", " . $pub['lat'] .
+                                                                        ", " . $pub['lng'] .
+                                 (in_array('description', $pub) ?       ", " . $pub['description']     : "") .
+                                 (in_array('add_user', $pub) ?          ", " . $pub['add_user']        : "") .
+                                 (in_array('m_o', $pub) ?               ", " . $pub['monday_open']     : "") .
+                                 (in_array('m_c', $pub) ?               ", " . $pub['monday_close']    : "") .
+                                 (in_array('tu_o', $pub) ?              ", " . $pub['tuesday_open']    : "") .
+                                 (in_array('tu_c', $pub) ?              ", " . $pub['tuesday_close']   : "") .
+                                 (in_array('w_o', $pub) ?               ", " . $pub['wednesday_open']  : "") .
+                                 (in_array('w_c', $pub) ?               ", " . $pub['wednesday_close'] : "") .
+                                 (in_array('th_o', $pub) ?              ", " . $pub['thursday_open']   : "") .
+                                 (in_array('th_c', $pub) ?              ", " . $pub['thursday_close']  : "") .
+                                 (in_array('f_o', $pub) ?               ", " . $pub['friday_open']     : "") .
+                                 (in_array('f_c', $pub) ?               ", " . $pub['friday_close']    : "") .
+                                 (in_array('sa_o', $pub) ?              ", " . $pub['saturday_open']   : "") .
+                                 (in_array('sa_c', $pub) ?              ", " . $pub['saturday_close']  : "") .
+                                 (in_array('su_o', $pub) ?              ", " . $pub['sunday_open']     : "") .
+                                 (in_array('su_c', $pub) ?              ", " . $pub['sunday_close']    : "") .
+                                                                        ");";
+                }
+            
+                else if (count($args == 2) && is_numeric($args[0]) && $args[1] == 'schedule') {
+                    
+                    $schedule = $_POST;
+                    
+                    // Schedule should contain every week's day
+                    $dayScanner = ['m', 'tu', 'w', 'th', 'f', 'sa', 'su'];
+                    foreach ($dayScanner as $day) {
+                        $day_o = $day . '_o';
+                        $day_c = $day . '_c';
+                        if (!array_key_exists($day_o, $schedule) || !array_key_exists($day_c, $schedule) || is_null($schedule[$day_o]) || is_null($schedule[$day_c])) {
+                            return $this->generate_error(3);
+                        }
+                    }
+                    
+                    // Escaping strings
+                    foreach ($schedule as &$value) {
+                        if (is_string($value))
+                            $value = $conn->quote($value);
+                    }
+                    
+                    $pub_id = $args[0];
+                    $query =     "UPDATE pubs SET" .
+                                " monday_open = "       . $schedule['m_o']  . ", monday_close = "       . $schedule['m_c']  . ", " .
+                                " tuesday_open = "      . $schedule['tu_o'] . ", tuesday_close = "      . $schedule['tu_c'] . ", " .
+                                " wednesday_open = "    . $schedule['w_o']  . ", wednesday_close = "    . $schedule['w_c']  . ", " .
+                                " thursday_open = "     . $schedule['th_o'] . ", thursday_close = "     . $schedule['th_c'] . ", " .
+                                " friday_open = "       . $schedule['f_o']  . ", friday_close = "       . $schedule['f_c']  . ", " .
+                                " saturday_open = "     . $schedule['sa_o'] . ", saturday_close = "     . $schedule['sa_c'] . ", " .
+                                " sunday_open = "       . $schedule['su_o'] . ", sunday_close = "       . $schedule['su_c'] .
+                                " WHERE id = $pub_id;";
+                    
+                    return $conn->exec($query);
                 }
                 
-                $pub = $_POST;
-                
-                // Escaping strings
-                foreach ($pub as &$value) {
-                    if (is_string($value))
-                        $value = $conn->quote($value);
+                // No more options for this endpoint
+                else {
+                    return $this->generate_error(2);
                 }
-                
-                $query =                                            "INSERT INTO pubs (" .
-                                                                    "last_mod " .
-                                                                    ", name" .
-                                                                    ", address" .
-                                                                    ", lat" .
-                                                                    ", lng" .
-                             (in_array('description', $pub) ?       ", descript"        : "") .
-                             (in_array('add_user', $pub) ?          ", add_user"        : "") .
-                             (in_array('m_o', $pub) ?               ", monday_open"     : "") .
-                             (in_array('m_c', $pub) ?               ", monday_close"    : "") .
-                             (in_array('tu_o', $pub) ?              ", tuesday_open"    : "") .
-                             (in_array('tu_c', $pub) ?              ", tuesday_close"   : "") .
-                             (in_array('w_o', $pub) ?               ", wednesday_open"  : "") .
-                             (in_array('w_c', $pub) ?               ", wednesday_close" : "") .
-                             (in_array('th_o', $pub) ?              ", thursday_open"   : "") .
-                             (in_array('th_c', $pub) ?              ", thursday_close"  : "") .
-                             (in_array('f_o', $pub) ?               ", friday_open"     : "") .
-                             (in_array('f_c', $pub) ?               ", friday_close"    : "") .
-                             (in_array('sa_o', $pub) ?              ", saturday_open"   : "") .
-                             (in_array('sa_c', $pub) ?              ", saturday_close"  : "") .
-                             (in_array('su_o', $pub) ?              ", sunday_open"     : "") .
-                             (in_array('su_c', $pub) ?              ", sunday_close"    : "") .
-                                                                    ") VALUES (" .
-                                                                    "NOW()" .
-                                                                    ", " . $pub['name'] .
-                                                                    ", " . $pub['address'] .
-                                                                    ", " . $pub['lat'] .
-                                                                    ", " . $pub['lng'] .
-                             (in_array('description', $pub) ?       ", " . $pub['description']     : "") .
-                             (in_array('add_user', $pub) ?          ", " . $pub['add_user']        : "") .
-                             (in_array('m_o', $pub) ?               ", " . $pub['monday_open']     : "") .
-                             (in_array('m_c', $pub) ?               ", " . $pub['monday_close']    : "") .
-                             (in_array('tu_o', $pub) ?              ", " . $pub['tuesday_open']    : "") .
-                             (in_array('tu_c', $pub) ?              ", " . $pub['tuesday_close']   : "") .
-                             (in_array('w_o', $pub) ?               ", " . $pub['wednesday_open']  : "") .
-                             (in_array('w_c', $pub) ?               ", " . $pub['wednesday_close'] : "") .
-                             (in_array('th_o', $pub) ?              ", " . $pub['thursday_open']   : "") .
-                             (in_array('th_c', $pub) ?              ", " . $pub['thursday_close']  : "") .
-                             (in_array('f_o', $pub) ?               ", " . $pub['friday_open']     : "") .
-                             (in_array('f_c', $pub) ?               ", " . $pub['friday_close']    : "") .
-                             (in_array('sa_o', $pub) ?              ", " . $pub['saturday_open']   : "") .
-                             (in_array('sa_c', $pub) ?              ", " . $pub['saturday_close']  : "") .
-                             (in_array('su_o', $pub) ?              ", " . $pub['sunday_open']     : "") .
-                             (in_array('su_c', $pub) ?              ", " . $pub['sunday_close']    : "") .
-                                                                    ");";
             }
             
             $conn->exec($query);

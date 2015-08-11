@@ -1,3 +1,22 @@
+function handleAPIError (err) {
+  var msg;
+  
+  // API errors
+  if (err.msg) {
+    msg = err.msg + '\n' +
+          'Code: '+err.code + '\n' +
+          'Endpoint: '+err.endpoint + '\n' +
+          (err.verb ? 'Verb: '+err.verb + '\n' : '') +
+          'Arguments: ['+err.args+']';
+  }
+  // Others
+  else {
+    msg = err;
+  }
+            
+  alert(msg);
+}
+
 var mmp = angular.module('mmpAdmin', ['ngResource']);
 
 /**
@@ -11,86 +30,61 @@ mmp.controller('AppCtrl', ['$scope', 'Beers', 'BeerPubs', 'selectedBeer', functi
   };
 }]);
 
-mmp.controller('AddPubCtrl', ['$scope', 'Pubs', function ($scope, Pubs) {
-  
-  var formSubmited = false;
-  
-  $scope.buttonText = 'Search';
-  
-  $scope.pub = {
-    name: '',
-    address: '',
-    lat: null,
-    lng: null
-  };
-  
-  $scope.resetSubmitState = function () {
-    formSubmited = false;
-    $scope.$apply(function () {
-      $scope.buttonText = 'Search';
-    });
-  };
-  
-  $scope.addPubSubmit = function () {
-    if (!formSubmited) {
-      formSubmited = true;
-      $scope.geoCodePub();
-    }
-    
-    else {
-      $scope.savePub();
-    }
-  };
-  
-  $scope.geoCodePub = function () {
-    var 
-        geocoder =  new google.maps.Geocoder(),
-        address =   { 'address': $scope.pub.address };
-    
-    if (!$scope.addPub.$valid) {
-      return;
-    }
-    
-    geocoder.geocode(address, function (results, status) {
-      // check if result contains an error
-      if (status !== google.maps.GeocoderStatus.OK || results.length !== 1) {
-        $('#pref-pane-alert').removeClass('hidden');
-      }
-
-      else {
-        // result ok
-        var pub = results[0];
-        
-        $('#pref-pane-alert').addClass('hidden');
-        
-        $scope.$apply(function () {
-          $scope.buttonText = 'Submit!';
-          $scope.pub.address = pub.formatted_address;
-          $scope.pub.lat = pub.geometry.location.G;
-          $scope.pub.lng = pub.geometry.location.K;
-        });
-      }
-    });
-  };
-  
-  $scope.savePub = function () {
-    var newPub = new Pubs($scope.pub);
-    
-    newPub.$save({}, function (res) {
-      $scope.pub.id = res.id;
-      alert($scope.pub.name + ' has been successfully added!');
-    });
-  };
-}]);
-
 /**
- * Beers menu Ctrl
+ * Pubs menu Ctrl
  * */
 mmp.controller('PubMenuCtrl', ['$scope', function ($scope) {
   $scope.menuOpen = false;
   
   $scope.toggleMenu = function () {
     $scope.menuOpen = !$scope.menuOpen;
+  };
+}]);
+
+/**
+ * Schedule Ctrl
+ * */
+mmp.controller('PubScheduleCtrl', ['$scope', 'Pubs', function ($scope, Pubs) {
+  $scope.menuOpen = false;
+  
+  $scope.toggleMenu = function () {
+    $scope.menuOpen = !$scope.menuOpen;
+  };
+  
+  // Schedule times generator
+  $scope.pubTimes = [];
+  
+  var t = moment().hour(0).minute(0).second(0);
+  
+  for (var i = 0; i < 48; i++) {
+    $scope.pubTimes.push(t.format('HH:mm'));
+    t.add(30, 'minutes');
+  }
+  
+  // On new schedule submit
+  $scope.editScheduleSubmit = function () {
+    var schedule = {
+      m_o: $scope.pub.m_o, m_c: $scope.pub.m_c,
+      tu_o: $scope.pub.tu_o, tu_c: $scope.pub.tu_c,
+      w_o: $scope.pub.w_o, w_c: $scope.pub.w_c,
+      th_o: $scope.pub.th_o, th_c: $scope.pub.th_c,
+      f_o: $scope.pub.f_o, f_c: $scope.pub.f_c,
+      sa_o: $scope.pub.sa_o, sa_c: $scope.pub.sa_c,
+      su_o: $scope.pub.su_o, su_c: $scope.pub.su_c
+    };
+
+    Pubs.editSchedule({ id: $scope.pub.id }, schedule)
+        .$promise
+        .then(function (data) {
+          if (data.error)
+            handleAPIError(data.error);
+          
+          else {
+            console.log(data);
+            alert($scope.pub.name+"'s schedule has been updated!");
+          }
+        });
+
   };
 }]);
 
@@ -366,7 +360,7 @@ mmp.controller('AddPubBeerCtrl', ['$scope', '$timeout', 'Pubs', 'Breweries', 'se
               return pubBeer.id === breweryBeer.id;
             });
           });
-        }, 0);
+        }, 100);
       });
   };
   
@@ -403,6 +397,9 @@ mmp.controller('AddPubBeerCtrl', ['$scope', '$timeout', 'Pubs', 'Breweries', 'se
   };
 }]);
 
+/**
+ * Beers menu Ctrl
+ * */
 mmp.controller('BeersListCtrl', ['$scope', 'selectedBeers', function ($scope, selectedBeers) {
   $scope.selected = false;
   
@@ -418,39 +415,87 @@ mmp.controller('BeersListCtrl', ['$scope', 'selectedBeers', function ($scope, se
   };
 }]);
 
-mmp.controller('AddBeerCtrl', ['$scope', '$timeout', 'Beers', 'Breweries', 'Categories', function ($scope, $timeout, Beers, Breweries, Categories) {
+/**
+ * Adding a new pub Ctrl
+ * */
+mmp.controller('AddPubCtrl', ['$scope', 'Pubs', function ($scope, Pubs) {
   
-  $scope.brewery = { 
-    name: ''
-  };
-  $scope.beer = {
+  var formSubmited = false;
+  
+  $scope.buttonText = 'Search';
+  
+  $scope.pub = {
     name: '',
-    description: ''
+    address: '',
+    lat: null,
+    lng: null
   };
   
-  $scope.breweries = [];
-  
-  $scope.setFormBrewery = function (brewery) {
-    $scope.brewery = brewery;
-    $scope.breweries = [];
-  };
-  
-  $scope.getBreweries = function () {
-    var term = $scope.brewery.name.trim();
+  $scope.addPubSubmit = function () {
+    if (!formSubmited) {
+      formSubmited = true;
+      $scope.geoCodePub();
+    }
     
-    $scope.breweries = [];
-    
-    if (!!term) {
-      Breweries.query({ verb: 'find', term: term }, function (data) {
-        $scope.breweries = data;
-      });
+    else {
+      $scope.savePub();
     }
   };
   
+  $scope.geoCodePub = function () {
+    var 
+        geocoder =  new google.maps.Geocoder(),
+        address =   { 'address': $scope.pub.address };
+    
+    if (!$scope.addPub.$valid) {
+      return;
+    }
+    
+    geocoder.geocode(address, function (results, status) {
+      // check if result contains an error
+      if (status !== google.maps.GeocoderStatus.OK || results.length !== 1) {
+        $('#pref-pane-alert').removeClass('hidden');
+      }
+
+      else {
+        // result ok
+        var pub = results[0];
+        
+        $('#pref-pane-alert').addClass('hidden');
+        
+        $scope.$apply(function () {
+          $scope.buttonText = 'Submit!';
+          $scope.pub.address = pub.formatted_address;
+          $scope.pub.lat = pub.geometry.location.G;
+          $scope.pub.lng = pub.geometry.location.K;
+        });
+      }
+    });
+  };
   
-  Categories.query({ verb: null }, function (data) {
-    $scope.categories = data;
-  });
+  $scope.savePub = function () {
+    Pubs.save({}, $scope.pub)
+        .$promise
+        .then(function (res) {
+          alert($scope.pub.name + ' has been successfully added!');
+          $scope.pub = {};
+          $scope.resetForm();
+        });
+  };
+  
+  $scope.resetForm = function () {
+    $scope.addPub.$setPristine();
+    $scope.addPub.$setUntouched();
+    formSubmited = false;
+    $scope.buttonText = 'Search';
+  };
+}]);
+
+/**
+ * Adding a new beer or brewery Ctrl
+ * */
+mmp.controller('AddBeerAndBreweryCtrl', ['$scope', function ($scope) {
+  
 }]);
 
 
@@ -494,6 +539,10 @@ mmp.factory('Pubs', function ($resource) {
     removeBeer: {
       method: 'DELETE',
       params: { verb: 'beer' }
+    },
+    editSchedule: {
+      method: 'POST',
+      params: { verb: 'schedule' }
     }
   });
 });
@@ -524,7 +573,6 @@ mmp.service('selectedBeers', function () {
     return selected;
   };
 });
-
 
 mmp.service('selectedBeer', function () {
   var selected = {};

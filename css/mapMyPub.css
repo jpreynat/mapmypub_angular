@@ -22,8 +22,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .iw-closer {
-	top: 30px !important;
-	right: 20px !important;
+	top: 32px !important;
+	right: 22px !important;
 }
 
 .gm-style-iw .dl-horizontal dt {
@@ -183,8 +183,15 @@ h1, h2, h3, h4, h5, h6 {
 	font-size: 9rem;
 }
 
+.site-title img {
+	width: 22%;
+	min-width: 180px;
+	margin-top: 1.5rem;
+}
+
 .site-title h1,
 .site-title h3 {
+	margin-top: 0;
 	font-weight: 600;
 	font-family: Playball, cursive;
 	color: rgba(165, 59, 59, 1);
@@ -275,7 +282,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #bg-bottom {
-	height: 10rem;
+	height: 15rem;
 	margin: 0 auto;
 }
 
@@ -306,7 +313,7 @@ h1, h2, h3, h4, h5, h6 {
  * Admin page
  */
 body.admin-body {
-	background: url('../img/gplaypattern.png');
+	background: url('../img/gray_jean.png');
 }
 
 body.admin-body #page-container {
@@ -323,7 +330,7 @@ body.admin-body #page-container {
 
 .admin-form.closed {
 	max-height: 8rem;
-	margin-bottom: 2rem;
+	margin-bottom: 0;
     overflow-y: hidden;
     
     background-color: rgba(255, 255, 255, 0.06);
@@ -331,7 +338,7 @@ body.admin-body #page-container {
 }
 
 .admin-form {
-	margin-bottom: 5rem;
+	margin-bottom: 2rem;
 	max-height: 600rem;
 	padding: 2rem;
     background-color: rgba(0, 0, 0, 0.35);
@@ -377,6 +384,12 @@ body.admin-body #page-container {
 	color: #FFB3B3;
 }
 
+section.schedule .day {
+	position: absolute;
+    left: 2rem;
+}
+
+section.schedule h3,
 section.menu h3 {
 	font-family: 'Raleway', sans-serif;
 	color: rgb(241, 241, 241);
@@ -388,35 +401,19 @@ section.menu h4 {
 	color: #FFB3B3;
 }
 
-div.beers .list {
-	margin-top: 4rem;
-}
-
-.simple-list li span.brewery {
-	margin-left: 1rem;
-	
-	font-family: 'Pacifico', cursive;
-	/*font-size: 2rem;*/
-	font-weight: 400;
-	
-	color: rgb(216, 216, 216);
-}
-
-span.deleter {
-	margin-right: 3%;
-	
-	font-size: 1.3rem;
-	font-weight: 600;
-	
-	cursor: pointer;
+div.beers {
+	-webkit-column-count: 4;
+	column-count: 4;
+	-webkit-column-gap: 3rem;
+	column-gap: 3rem;
 }
 
 .add-beer-card,
 .beer-card {
 	position: relative;
-	float: left;
-	width: 30%;
-	margin: auto 1.66% 2rem;
+	display: inline-block;
+	width: 100%;
+	margin: 2rem auto;
 	padding: 2rem 1rem;
 	border-radius: 3px;
 	background-color: rgb(95, 95, 95);
@@ -447,6 +444,10 @@ span.deleter {
 	font-style: italic;
 }
 
+button {
+	margin-top: 1.5rem;
+}
+
 /**
  * Font awesome size tweak
  * ***************************/
@@ -473,4 +474,38 @@ span.deleter {
 i.deleter:hover {
 	opacity: 1;
 	transition: opacity 0.2s linear;
+}
+
+
+@media(max-width:767px) {
+	#findBeerForm .form-group {
+		margin-bottom: 0;
+	}
+	
+	#main-container {
+		max-height: 100%;
+		height: 85%;
+		padding: 0;
+	}
+	
+	#mmpMap {
+		margin: 0;
+	}
+	
+	section.schedule .day {
+		position: relative;
+	    left: 0;
+	    display: block;
+	}
+	
+	.form-horizontal .form-control {
+		margin-bottom: 1rem;
+	}
+	
+	div.beers {
+		-webkit-column-count: 2;
+		column-count: 2;
+		-webkit-column-gap: 2rem;
+		column-gap: 2rem;
+	}
 }
